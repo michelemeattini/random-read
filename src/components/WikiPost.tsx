@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import PostActions from "./PostActions";
+import { ExternalLink } from "lucide-react";
 
 interface WikiPostProps {
   id: string;
@@ -20,6 +21,15 @@ const WikiPost = ({ id, title, summary, imageUrl, sourceUrl, onViewed }: WikiPos
     return () => clearTimeout(timer);
   }, [onViewed]);
 
+  const extractDomain = (url: string) => {
+    try {
+      const domain = new URL(url).hostname;
+      return domain.replace('www.', '');
+    } catch {
+      return url;
+    }
+  };
+
   return (
     <div className="relative h-screen w-screen snap-start snap-always overflow-hidden">
       {/* Background Image with Animation */}
@@ -32,30 +42,33 @@ const WikiPost = ({ id, title, summary, imageUrl, sourceUrl, onViewed }: WikiPos
         }}
       />
       
-      {/* Gradient Overlay for Readability - Lighter to show background better */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/70" />
+      {/* Gradient Overlay for Readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/80" />
       
       {/* Post Actions (Like, Save, Share) */}
       <PostActions postId={id} />
       
       {/* Content */}
-      <div className="relative h-full flex flex-col justify-end p-6 pb-24 animate-fade-in">
-        <div className="space-y-3">
-          <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight drop-shadow-lg">
-            {title}
-          </h1>
-          
-          <p className="text-base md:text-lg text-white/95 leading-relaxed max-w-3xl line-clamp-6 drop-shadow-md">
-            {summary}
-          </p>
-          
-          <a 
+      <div className="relative h-full flex flex-col justify-end px-4 pb-32 md:pb-24 animate-fade-in max-w-2xl">
+        <h1 className="text-[2.5rem] leading-[1.1] md:text-5xl font-black text-white mb-5 drop-shadow-2xl" style={{ textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}>
+          {title}
+        </h1>
+        
+        <p className="text-base md:text-lg font-normal text-white leading-relaxed mb-6 drop-shadow-lg" style={{ textShadow: '0 1px 10px rgba(0,0,0,0.5)' }}>
+          {summary}
+        </p>
+        
+        {/* Sources */}
+        <div className="space-y-2">
+          <p className="text-xs font-bold tracking-widest text-white/80 uppercase">FONTI</p>
+          <a
             href={sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block text-sm text-accent hover:text-accent/80 transition-colors"
+            className="text-sm flex items-center gap-2 text-white hover:underline drop-shadow-md"
           >
-            Fonte: Wikipedia →
+            <ExternalLink className="w-3.5 h-3.5" />
+            {extractDomain(sourceUrl)}
           </a>
         </div>
       </div>

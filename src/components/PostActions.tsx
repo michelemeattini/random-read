@@ -145,37 +145,33 @@ const PostActions = ({ postId }: PostActionsProps) => {
   };
 
   return (
-    <div className="absolute right-4 bottom-24 flex flex-col gap-4 z-10">
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-14 w-14 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50"
+    <div className="absolute right-3 bottom-32 md:bottom-24 flex flex-col gap-6 z-10">
+      <button
         onClick={handleLike}
+        className="flex flex-col items-center text-white hover:scale-110 transition-transform active:scale-95"
       >
         <Heart
-          className={`h-7 w-7 ${isLiked ? "fill-red-500 text-red-500" : "text-white"}`}
+          className={`w-9 h-9 drop-shadow-lg ${isLiked ? "fill-red-500 text-red-500" : ""}`}
+          strokeWidth={2}
         />
-      </Button>
+      </button>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-14 w-14 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50"
+      <button
         onClick={handleSave}
+        className="flex flex-col items-center text-white hover:scale-110 transition-transform active:scale-95"
       >
         <Bookmark
-          className={`h-7 w-7 ${isSaved ? "fill-yellow-500 text-yellow-500" : "text-white"}`}
+          className={`w-9 h-9 drop-shadow-lg ${isSaved ? "fill-white text-white" : ""}`}
+          strokeWidth={2}
         />
-      </Button>
+      </button>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-14 w-14 rounded-full bg-black/30 backdrop-blur-sm hover:bg-black/50"
+      <button
         onClick={handleShare}
+        className="flex flex-col items-center text-white hover:scale-110 transition-transform active:scale-95"
       >
-        <Share2 className="h-7 w-7 text-white" />
-      </Button>
+        <Share2 className="w-9 h-9 drop-shadow-lg" strokeWidth={2} />
+      </button>
     </div>
   );
 };
