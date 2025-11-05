@@ -18,23 +18,30 @@ const Index = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [viewedPosts, setViewedPosts] = useState<Set<string>>(new Set());
+  const [viewedPostIds, setViewedPostIds] = useState<Set<string>>(() => {
+    // Load viewed posts from localStorage
+    const stored = localStorage.getItem('viewedPostIds');
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  });
   const containerRef = useRef<HTMLDivElement>(null);
   const lastFetchRef = useRef<number>(0);
+  const isLoadingMoreRef = useRef(false);
 
-  const loadExistingPosts = useCallback(async () => {
+  const loadExistingPosts = useCallback(async (excludeIds: Set<string>) => {
     const { data, error } = await supabase
       .from('wiki_posts')
       .select('*')
+      .not('id', 'in', `(${Array.from(excludeIds).join(',') || 'null'})`)
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(20);
 
     if (error) {
       console.error('Error loading posts:', error);
       return [];
     }
 
-    return data || [];
+    // Filter out already viewed posts
+    return (data || []).filter(post => !excludeIds.has(post.id));
   }, []);
 
   const generateNewPost = useCallback(async () => {
@@ -77,18 +84,30 @@ const Index = () => {
   }, [toast]);
 
   const loadMorePosts = useCallback(async () => {
-    const existingPosts = await loadExistingPosts();
-    const unviewedExisting = existingPosts.filter(p => !viewedPosts.has(p.id));
-
+    if (isLoadingMoreRef.current) return;
+    
+    isLoadingMoreRef.current = true;
+    
+    // Get all post IDs we've already loaded (viewed or in current list)
+    const allLoadedIds = new Set([
+      ...viewedPostIds,
+      ...posts.map(p => p.id)
+    ]);
+    
+    const existingPosts = await loadExistingPosts(allLoadedIds);
     const postsToAdd: Post[] = [];
 
     // Logic: for every 4 existing posts, 1 should be generated
-    const existingCount = Math.min(4, unviewedExisting.length);
-    postsToAdd.push(...unviewedExisting.slice(0, existingCount));
+    const existingCount = Math.min(4, existingPosts.length);
+    
+    if (existingCount > 0) {
+      postsToAdd.push(...existingPosts.slice(0, existingCount));
+    }
 
-    if (existingCount === 4 || unviewedExisting.length === 0) {
+    // Generate new post if we've shown 4 existing or no existing posts available
+    if (existingCount === 4 || existingPosts.length === 0) {
       const newPost = await generateNewPost();
-      if (newPost) {
+      if (newPost && !allLoadedIds.has(newPost.id)) {
         postsToAdd.push(newPost);
       }
     }
@@ -98,37 +117,11 @@ const Index = () => {
     }
 
     setIsLoading(false);
-  }, [loadExistingPosts, generateNewPost, viewedPosts]);
+    isLoadingMoreRef.current = false;
+  }, [loadExistingPosts, generateNewPost, viewedPostIds, posts]);
 
   useEffect(() => {
     loadMorePosts();
-
-    // Subscribe to new posts from other users
-    const channel = supabase
-      .channel('wiki-posts-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'wiki_posts'
-        },
-        (payload) => {
-          const newPost = payload.new as Post;
-          if (!viewedPosts.has(newPost.id)) {
-            setPosts(prev => {
-              const exists = prev.some(p => p.id === newPost.id);
-              if (exists) return prev;
-              return [...prev, newPost];
-            });
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   const handleScroll = useCallback(() => {
@@ -141,17 +134,22 @@ const Index = () => {
     if (newIndex !== currentIndex) {
       setCurrentIndex(newIndex);
       
-      // Preload more posts when approaching the end
-      if (newIndex >= posts.length - 2) {
+      // Load more posts when approaching the end (2 posts before the last)
+      if (newIndex >= posts.length - 2 && !isLoadingMoreRef.current) {
         loadMorePosts();
       }
     }
   }, [currentIndex, posts.length, loadMorePosts]);
 
   const handlePostViewed = useCallback(async (postId: string) => {
-    setViewedPosts(prev => new Set([...prev, postId]));
+    // Mark as viewed in state and localStorage
+    setViewedPostIds(prev => {
+      const newSet = new Set([...prev, postId]);
+      localStorage.setItem('viewedPostIds', JSON.stringify(Array.from(newSet)));
+      return newSet;
+    });
     
-    // Get current view count and increment
+    // Increment view count in database
     const { data } = await supabase
       .from('wiki_posts')
       .select('view_count')
@@ -161,7 +159,7 @@ const Index = () => {
     if (data) {
       await supabase
         .from('wiki_posts')
-        .update({ view_count: data.view_count + 1 })
+        .update({ view_count: (data.view_count || 0) + 1 })
         .eq('id', postId);
     }
   }, []);
