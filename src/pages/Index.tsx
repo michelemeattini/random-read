@@ -191,10 +191,24 @@ const Index = () => {
 
   return (
     <>
-      {/* Top Navigation Bar */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-sm">
+      {/* Top Navigation Bar - Desktop only */}
+      <div className="hidden md:block fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-sm">
         <div className="flex items-center justify-between p-4">
           <h1 className="text-white text-xl font-bold">WikiScroll</h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/20"
+            onClick={() => isAuthenticated ? navigate("/profile") : navigate("/auth")}
+          >
+            <User className="h-6 w-6" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Bottom Navigation Bar - Mobile only */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-sm">
+        <div className="flex items-center justify-center p-4">
           <Button
             variant="ghost"
             size="icon"
