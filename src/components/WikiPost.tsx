@@ -33,10 +33,10 @@ const WikiPost = ({ id, title, summary, imageUrl, sourceUrl, category, onViewed 
   };
 
   return (
-    <div className="relative h-screen w-screen snap-start snap-always overflow-hidden">
+    <div className="relative h-screen w-screen snap-start snap-always overflow-hidden bg-black">
       {/* Background Image with Animation */}
       <div 
-        className={`absolute inset-0 ${animationType}`}
+        className="absolute inset-0 animate-zoom-bg"
         style={{
           backgroundImage: `url(${imageUrl})`,
           backgroundSize: "cover",
@@ -44,22 +44,23 @@ const WikiPost = ({ id, title, summary, imageUrl, sourceUrl, category, onViewed 
         }}
       />
       
-      {/* Gradient Overlay for Readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/80" />
+      {/* Dark Overlay + Gradient for Readability */}
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
       
       {/* Post Actions (Like, Save, Share) */}
       <PostActions postId={id} />
       
       {/* Content - Centered Vertically and Horizontally */}
-      <div className="relative h-full flex flex-col justify-center items-center px-6 pb-32 md:pb-24 animate-fade-in">
+      <div className="relative h-full flex flex-col justify-center items-center px-6 pb-32 md:pb-24 animate-fade-in-up">
         <div className="max-w-3xl w-full space-y-6 text-center">
           {/* Title (Micro Riassunto) */}
-          <h1 className="text-[2.5rem] leading-[1.1] md:text-5xl font-black text-white drop-shadow-2xl" style={{ textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}>
+          <h1 className="text-[2.5rem] leading-[1.1] md:text-5xl font-bold text-white" style={{ textShadow: '0 4px 12px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.6)' }}>
             {title}
           </h1>
           
           {/* Detailed Explanation */}
-          <p className="text-base md:text-lg font-normal text-white leading-relaxed drop-shadow-lg" style={{ textShadow: '0 1px 10px rgba(0,0,0,0.5)' }}>
+          <p className="text-base md:text-lg font-light text-white/95 leading-relaxed" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.8), 0 1px 3px rgba(0,0,0,0.6)' }}>
             {summary}
           </p>
           
@@ -68,7 +69,7 @@ const WikiPost = ({ id, title, summary, imageUrl, sourceUrl, category, onViewed 
             <div className="flex justify-center pt-2">
               <Badge 
                 variant="secondary" 
-                className="bg-white/20 text-white border-white/30 backdrop-blur-sm text-xs font-bold tracking-wider uppercase px-3 py-1"
+                className="bg-white/10 text-white border border-white/20 backdrop-blur-md text-xs font-semibold tracking-wider uppercase px-4 py-1.5"
               >
                 {category}
               </Badge>
@@ -76,8 +77,8 @@ const WikiPost = ({ id, title, summary, imageUrl, sourceUrl, category, onViewed 
           )}
           
           {/* Sources */}
-          <div className="space-y-2 pt-2">
-            <p className="text-xs font-bold tracking-widest text-white/80 uppercase">FONTI</p>
+          <div className="space-y-2 pt-4">
+            <p className="text-xs font-semibold tracking-widest text-white/70 uppercase">FONTI</p>
             <a
               href={sourceUrl}
               target="_blank"
