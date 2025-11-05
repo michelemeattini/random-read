@@ -1,1 +1,4 @@
 project_id = "atywywskcgixdeliqivw"
+
+[functions.generate-wiki-post]
+verify_jwt = false

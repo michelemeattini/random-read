@@ -14,7 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      wiki_posts: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string
+          source_url: string
+          summary: string
+          title: string
+          view_count: number | null
+          wikipedia_page_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url: string
+          source_url: string
+          summary: string
+          title: string
+          view_count?: number | null
+          wikipedia_page_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          source_url?: string
+          summary?: string
+          title?: string
+          view_count?: number | null
+          wikipedia_page_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
