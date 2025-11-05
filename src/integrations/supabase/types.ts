@@ -78,23 +78,27 @@ export type Database = {
           created_at: string
           full_name: string
           id: string
+          preferred_categories: string[] | null
         }
         Insert: {
           birth_date: string
           created_at?: string
           full_name: string
           id: string
+          preferred_categories?: string[] | null
         }
         Update: {
           birth_date?: string
           created_at?: string
           full_name?: string
           id?: string
+          preferred_categories?: string[] | null
         }
         Relationships: []
       }
       wiki_posts: {
         Row: {
+          category: string | null
           created_at: string | null
           id: string
           image_url: string
@@ -105,6 +109,7 @@ export type Database = {
           wikipedia_page_id: string
         }
         Insert: {
+          category?: string | null
           created_at?: string | null
           id?: string
           image_url: string
@@ -115,6 +120,7 @@ export type Database = {
           wikipedia_page_id: string
         }
         Update: {
+          category?: string | null
           created_at?: string | null
           id?: string
           image_url?: string

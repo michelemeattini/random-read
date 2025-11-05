@@ -12,13 +12,15 @@ serve(async (req) => {
   }
 
   try {
+    const { category } = await req.json().catch(() => ({}));
+    
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    console.log('Fetching random Wikipedia article...');
+    console.log('Fetching random Wikipedia article...', category ? `Category: ${category}` : '');
     
     // Get random Wikipedia article
     const wikiResponse = await fetch(
@@ -33,7 +35,11 @@ serve(async (req) => {
     
     console.log('Wikipedia article fetched:', wikiData.title);
 
-    // Generate engaging summary using Lovable AI
+    // Generate engaging summary using Lovable AI with category context
+    const categoryPrompt = category 
+      ? `Questo contenuto appartiene alla categoria "${category}". ` 
+      : '';
+
     const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -49,7 +55,7 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: `Crea un riassunto di MASSIMO 50-60 parole per questo articolo Wikipedia:\n\nTitolo: ${wikiData.title}\n\nContenuto: ${wikiData.extract}`
+            content: `${categoryPrompt}Crea un riassunto di MASSIMO 50-60 parole per questo articolo Wikipedia:\n\nTitolo: ${wikiData.title}\n\nContenuto: ${wikiData.extract}`
           }
         ],
       }),
@@ -113,6 +119,27 @@ serve(async (req) => {
     
     console.log('Image URL:', imageUrl);
 
+    // Determine category from title/content if not provided
+    let postCategory = category;
+    if (!postCategory) {
+      const titleLower = wikiData.title.toLowerCase();
+      const contentLower = summary.toLowerCase();
+      
+      if (titleLower.includes('scien') || titleLower.includes('tecn') || contentLower.includes('tecnolog')) {
+        postCategory = 'Scienza e Tecnologia';
+      } else if (titleLower.includes('stor') || titleLower.includes('antic') || contentLower.includes('storia')) {
+        postCategory = 'Storia';
+      } else if (titleLower.includes('arte') || titleLower.includes('cultur') || contentLower.includes('artista')) {
+        postCategory = 'Arte e Cultura';
+      } else if (titleLower.includes('natur') || titleLower.includes('animal') || contentLower.includes('specie')) {
+        postCategory = 'Natura';
+      } else if (titleLower.includes('geograf') || titleLower.includes('paes') || contentLower.includes('città')) {
+        postCategory = 'Geografia';
+      } else {
+        postCategory = 'Generale';
+      }
+    }
+
     // Save to database
     const { data: post, error: dbError } = await supabase
       .from('wiki_posts')
@@ -122,6 +149,7 @@ serve(async (req) => {
         image_url: imageUrl,
         source_url: wikiData.content_urls.desktop.page,
         wikipedia_page_id: wikiData.pageid.toString(),
+        category: postCategory
       })
       .select()
       .single();
@@ -131,7 +159,7 @@ serve(async (req) => {
       throw dbError;
     }
 
-    console.log('Post saved to database:', post.id);
+    console.log('Post saved to database:', post.id, 'Category:', postCategory);
 
     return new Response(
       JSON.stringify({ success: true, post }), 

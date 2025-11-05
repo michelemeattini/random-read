@@ -2,14 +2,29 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
-import { User, LogOut, Heart, Bookmark } from "lucide-react";
-import WikiPost from "@/components/WikiPost";
+import { User, LogOut, Heart, Bookmark, Loader2 } from "lucide-react";
+
+const AVAILABLE_CATEGORIES = [
+  "Scienza e Tecnologia",
+  "Storia",
+  "Arte e Cultura",
+  "Natura",
+  "Geografia",
+  "Sport",
+  "Medicina",
+  "Astronomia",
+  "Musica",
+  "Letteratura"
+];
 
 interface Profile {
   full_name: string;
   birth_date: string;
+  preferred_categories?: string[];
 }
 
 interface Post {
@@ -28,6 +43,8 @@ const Profile = () => {
   const [likedPosts, setLikedPosts] = useState<Post[]>([]);
   const [savedPosts, setSavedPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
+  const [isSavingCategories, setIsSavingCategories] = useState(false);
 
   useEffect(() => {
     checkUser();
@@ -50,6 +67,7 @@ const Profile = () => {
 
     if (profileData) {
       setProfile(profileData);
+      setPreferredCategories(profileData.preferred_categories || []);
     }
 
     // Load liked posts
@@ -90,6 +108,43 @@ const Profile = () => {
       description: "A presto!",
     });
     navigate("/auth");
+  };
+
+  const handleCategoryToggle = (category: string) => {
+    setPreferredCategories(prev => {
+      if (prev.includes(category)) {
+        return prev.filter(c => c !== category);
+      } else {
+        return [...prev, category];
+      }
+    });
+  };
+
+  const handleSaveCategories = async () => {
+    setIsSavingCategories(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) return;
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ preferred_categories: preferredCategories })
+      .eq("id", session.user.id);
+
+    if (error) {
+      toast({
+        title: "Errore",
+        description: "Impossibile salvare le categorie",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Categorie salvate",
+        description: "Le tue preferenze sono state aggiornate",
+      });
+    }
+    
+    setIsSavingCategories(false);
   };
 
   if (isLoading) {
@@ -138,16 +193,19 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Tabs for Liked and Saved Posts */}
+      {/* Tabs for Liked, Saved Posts, and Categories */}
       <Tabs defaultValue="liked" className="w-full">
-        <TabsList className="w-full grid grid-cols-2 sticky top-[73px] z-40 bg-background rounded-none border-b">
+        <TabsList className="w-full grid grid-cols-3 sticky top-[73px] z-40 bg-background rounded-none border-b">
           <TabsTrigger value="liked" className="gap-2">
             <Heart className="w-4 h-4" />
-            Mi piace ({likedPosts.length})
+            Mi piace
           </TabsTrigger>
           <TabsTrigger value="saved" className="gap-2">
             <Bookmark className="w-4 h-4" />
-            Salvati ({savedPosts.length})
+            Salvati
+          </TabsTrigger>
+          <TabsTrigger value="categories" className="gap-2">
+            Categorie
           </TabsTrigger>
         </TabsList>
 
@@ -217,6 +275,50 @@ const Profile = () => {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="categories" className="mt-0 p-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Categorie Preferite</CardTitle>
+              <CardDescription>
+                Seleziona le tue categorie di interesse. Riceverai l'80% dei contenuti da queste categorie.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {AVAILABLE_CATEGORIES.map((category) => (
+                  <div key={category} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={category}
+                      checked={preferredCategories.includes(category)}
+                      onCheckedChange={() => handleCategoryToggle(category)}
+                    />
+                    <label
+                      htmlFor={category}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {category}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              <Button 
+                onClick={handleSaveCategories} 
+                disabled={isSavingCategories}
+                className="w-full"
+              >
+                {isSavingCategories ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Salvataggio...
+                  </>
+                ) : (
+                  "Salva Categorie"
+                )}
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

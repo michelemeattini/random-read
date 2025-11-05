@@ -27,30 +27,60 @@ const Index = () => {
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastFetchRef = useRef<number>(0);
   const isLoadingMoreRef = useRef(false);
 
   useEffect(() => {
-    // Check auth status
+    // Check auth status and load preferences
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsAuthenticated(!!session);
+      if (session) {
+        loadUserPreferences(session.user.id);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setIsAuthenticated(!!session);
+      if (session) {
+        loadUserPreferences(session.user.id);
+      } else {
+        setPreferredCategories([]);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
+  const loadUserPreferences = async (userId: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('preferred_categories')
+      .eq('id', userId)
+      .single();
+    
+    if (data?.preferred_categories) {
+      setPreferredCategories(data.preferred_categories);
+    }
+  };
+
   const loadExistingPosts = useCallback(async (excludeIds: Set<string>) => {
-    const { data, error } = await supabase
+    let query = supabase
       .from('wiki_posts')
       .select('*')
       .not('id', 'in', `(${Array.from(excludeIds).join(',') || 'null'})`)
-      .order('created_at', { ascending: false })
-      .limit(20);
+      .order('created_at', { ascending: false });
+
+    // If user has preferred categories, apply 80/20 logic
+    if (preferredCategories.length > 0) {
+      const shouldUsePreferred = Math.random() < 0.8; // 80% chance
+      if (shouldUsePreferred) {
+        query = query.in('category', preferredCategories);
+      }
+    }
+
+    const { data, error } = await query.limit(20);
 
     if (error) {
       console.error('Error loading posts:', error);
@@ -59,7 +89,7 @@ const Index = () => {
 
     // Filter out already viewed posts
     return (data || []).filter(post => !excludeIds.has(post.id));
-  }, []);
+  }, [preferredCategories]);
 
   const generateNewPost = useCallback(async () => {
     const now = Date.now();
@@ -70,7 +100,15 @@ const Index = () => {
     lastFetchRef.current = now;
     
     try {
-      const { data, error } = await supabase.functions.invoke('generate-wiki-post');
+      // Select category based on preferences (80/20 logic)
+      let selectedCategory = null;
+      if (preferredCategories.length > 0 && Math.random() < 0.8) {
+        selectedCategory = preferredCategories[Math.floor(Math.random() * preferredCategories.length)];
+      }
+
+      const { data, error } = await supabase.functions.invoke('generate-wiki-post', {
+        body: { category: selectedCategory }
+      });
       
       if (error) throw error;
       
@@ -98,7 +136,7 @@ const Index = () => {
       
       return null;
     }
-  }, [toast]);
+  }, [toast, preferredCategories]);
 
   const loadMorePosts = useCallback(async () => {
     if (isLoadingMoreRef.current) return;
