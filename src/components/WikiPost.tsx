@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import PostActions from "./PostActions";
 
 interface WikiPostProps {
   id: string;
@@ -9,7 +10,7 @@ interface WikiPostProps {
   onViewed: () => void;
 }
 
-const WikiPost = ({ title, summary, imageUrl, sourceUrl, onViewed }: WikiPostProps) => {
+const WikiPost = ({ id, title, summary, imageUrl, sourceUrl, onViewed }: WikiPostProps) => {
   const [animationType] = useState(Math.random() > 0.5 ? "animate-pan" : "animate-zoom");
 
   useEffect(() => {
@@ -33,6 +34,9 @@ const WikiPost = ({ title, summary, imageUrl, sourceUrl, onViewed }: WikiPostPro
       
       {/* Gradient Overlay for Readability - Lighter to show background better */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/70" />
+      
+      {/* Post Actions (Like, Save, Share) */}
+      <PostActions postId={id} />
       
       {/* Content */}
       <div className="relative h-full flex flex-col justify-end p-6 pb-24 animate-fade-in">

@@ -2,7 +2,9 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import WikiPost from "@/components/WikiPost";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface Post {
   id: string;
@@ -15,6 +17,7 @@ interface Post {
 
 const Index = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -23,9 +26,23 @@ const Index = () => {
     const stored = localStorage.getItem('viewedPostIds');
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastFetchRef = useRef<number>(0);
   const isLoadingMoreRef = useRef(false);
+
+  useEffect(() => {
+    // Check auth status
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const loadExistingPosts = useCallback(async (excludeIds: Set<string>) => {
     const { data, error } = await supabase
@@ -173,30 +190,47 @@ const Index = () => {
   }
 
   return (
-    <div 
-      ref={containerRef}
-      className="h-screen w-screen overflow-y-scroll snap-y snap-mandatory"
-      onScroll={handleScroll}
-      style={{ overscrollBehaviorY: 'contain' }}
-    >
-      {posts.map((post) => (
-        <WikiPost
-          key={post.id}
-          id={post.id}
-          title={post.title}
-          summary={post.summary}
-          imageUrl={post.image_url}
-          sourceUrl={post.source_url}
-          onViewed={() => handlePostViewed(post.id)}
-        />
-      ))}
-      
-      {isLoading && posts.length > 0 && (
-        <div className="h-screen w-screen flex items-center justify-center snap-start">
-          <Loader2 className="w-8 h-8 animate-spin text-accent" />
+    <>
+      {/* Top Navigation Bar */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-sm">
+        <div className="flex items-center justify-between p-4">
+          <h1 className="text-white text-xl font-bold">WikiScroll</h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/20"
+            onClick={() => isAuthenticated ? navigate("/profile") : navigate("/auth")}
+          >
+            <User className="h-6 w-6" />
+          </Button>
         </div>
-      )}
-    </div>
+      </div>
+
+      <div 
+        ref={containerRef}
+        className="h-screen w-screen overflow-y-scroll snap-y snap-mandatory"
+        onScroll={handleScroll}
+        style={{ overscrollBehaviorY: 'contain' }}
+      >
+        {posts.map((post) => (
+          <WikiPost
+            key={post.id}
+            id={post.id}
+            title={post.title}
+            summary={post.summary}
+            imageUrl={post.image_url}
+            sourceUrl={post.source_url}
+            onViewed={() => handlePostViewed(post.id)}
+          />
+        ))}
+        
+        {isLoading && posts.length > 0 && (
+          <div className="h-screen w-screen flex items-center justify-center snap-start">
+            <Loader2 className="w-8 h-8 animate-spin text-accent" />
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 
