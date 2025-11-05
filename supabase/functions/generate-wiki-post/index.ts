@@ -52,11 +52,11 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Sei un esperto di comunicazione. Crea titoli accattivanti che catturano l\'essenza di un argomento in modo coinvolgente e moderno.'
+            content: 'Sei un esperto di comunicazione. Crea titoli accattivanti che catturano l\'essenza di un argomento in modo coinvolgente e moderno. IMPORTANTE: Restituisci SOLO testo semplice, senza formattazione markdown (niente **, ***, ecc.).'
           },
           {
             role: 'user',
-            content: `${categoryPrompt}Crea un titolo breve e accattivante (MASSIMO 15-20 parole) che catturi l'essenza di questo articolo Wikipedia:\n\nTitolo: ${wikiData.title}\n\nContenuto: ${wikiData.extract}`
+            content: `${categoryPrompt}Crea un titolo breve e accattivante (MASSIMO 15-20 parole) che catturi l'essenza di questo articolo Wikipedia. Usa SOLO testo semplice senza formattazione.\n\nTitolo: ${wikiData.title}\n\nContenuto: ${wikiData.extract}`
           }
         ],
       }),
@@ -82,11 +82,11 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Sei un divulgatore culturale esperto. Crea spiegazioni dettagliate e coinvolgenti che approfondiscono l\'argomento in modo accessibile e interessante.'
+            content: 'Sei un divulgatore culturale esperto. Crea spiegazioni dettagliate e coinvolgenti che approfondiscono l\'argomento in modo accessibile e interessante. IMPORTANTE: Restituisci SOLO testo semplice, senza formattazione markdown (niente **, ***, ecc.).'
           },
           {
             role: 'user',
-            content: `${categoryPrompt}Crea una spiegazione dettagliata e coinvolgente (60-90 parole circa) per questo articolo Wikipedia:\n\nTitolo: ${wikiData.title}\n\nContenuto: ${wikiData.extract}`
+            content: `${categoryPrompt}Crea una spiegazione dettagliata e coinvolgente (60-90 parole circa) per questo articolo Wikipedia. Usa SOLO testo semplice senza formattazione.\n\nTitolo: ${wikiData.title}\n\nContenuto: ${wikiData.extract}`
           }
         ],
       }),
