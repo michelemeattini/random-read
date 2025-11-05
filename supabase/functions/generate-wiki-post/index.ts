@@ -40,7 +40,8 @@ serve(async (req) => {
       ? `Questo contenuto appartiene alla categoria "${category}". ` 
       : '';
 
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    // Generate short title (micro summary)
+    const titleResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${lovableApiKey}`,
@@ -51,27 +52,57 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Sei un divulgatore culturale esperto. Crea riassunti ULTRA-BREVI per schermi mobile. MASSIMO 50-60 parole (2-3 frasi). Devono essere coinvolgenti, impattanti e far venire voglia di saperne di più. Tono moderno e diretto.'
+            content: 'Sei un esperto di comunicazione. Crea titoli accattivanti che catturano l\'essenza di un argomento in modo coinvolgente e moderno.'
           },
           {
             role: 'user',
-            content: `${categoryPrompt}Crea un riassunto di MASSIMO 50-60 parole per questo articolo Wikipedia:\n\nTitolo: ${wikiData.title}\n\nContenuto: ${wikiData.extract}`
+            content: `${categoryPrompt}Crea un titolo breve e accattivante (MASSIMO 15-20 parole) che catturi l'essenza di questo articolo Wikipedia:\n\nTitolo: ${wikiData.title}\n\nContenuto: ${wikiData.extract}`
           }
         ],
       }),
     });
 
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error('AI Gateway error:', aiResponse.status, errorText);
+    if (!titleResponse.ok) {
+      throw new Error('Failed to generate AI title');
+    }
+
+    const titleData = await titleResponse.json();
+    const generatedTitle = titleData.choices[0].message.content.trim();
+    console.log('AI title generated:', generatedTitle.length, 'characters');
+
+    // Generate detailed summary
+    const summaryResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${lovableApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: 'Sei un divulgatore culturale esperto. Crea spiegazioni dettagliate e coinvolgenti che approfondiscono l\'argomento in modo accessibile e interessante.'
+          },
+          {
+            role: 'user',
+            content: `${categoryPrompt}Crea una spiegazione dettagliata e coinvolgente (60-90 parole circa) per questo articolo Wikipedia:\n\nTitolo: ${wikiData.title}\n\nContenuto: ${wikiData.extract}`
+          }
+        ],
+      }),
+    });
+
+    if (!summaryResponse.ok) {
+      const errorText = await summaryResponse.text();
+      console.error('AI Gateway error:', summaryResponse.status, errorText);
       
-      if (aiResponse.status === 429) {
+      if (summaryResponse.status === 429) {
         return new Response(
           JSON.stringify({ error: 'Rate limit superato. Riprova tra poco.' }), 
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      if (aiResponse.status === 402) {
+      if (summaryResponse.status === 402) {
         return new Response(
           JSON.stringify({ error: 'Crediti esauriti. Ricarica il tuo workspace Lovable AI.' }), 
           { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -81,15 +112,10 @@ serve(async (req) => {
       throw new Error('Failed to generate AI summary');
     }
 
-    const aiData = await aiResponse.json();
-    let summary = aiData.choices[0].message.content;
+    const summaryData = await summaryResponse.json();
+    const detailedSummary = summaryData.choices[0].message.content.trim();
 
-    // Validate and truncate summary if too long (max 300 characters for mobile)
-    if (summary.length > 300) {
-      summary = summary.substring(0, 297) + '...';
-    }
-
-    console.log('AI summary generated:', summary.length, 'characters');
+    console.log('AI summary generated:', detailedSummary.length, 'characters');
 
     // Get high-quality image from Wikipedia pageimages API
     let imageUrl = wikiData.originalimage?.source || wikiData.thumbnail?.source;
@@ -123,7 +149,7 @@ serve(async (req) => {
     let postCategory = category;
     if (!postCategory) {
       const titleLower = wikiData.title.toLowerCase();
-      const contentLower = summary.toLowerCase();
+      const contentLower = detailedSummary.toLowerCase();
       
       if (titleLower.includes('scien') || titleLower.includes('tecn') || contentLower.includes('tecnolog')) {
         postCategory = 'Scienza e Tecnologia';
@@ -144,8 +170,8 @@ serve(async (req) => {
     const { data: post, error: dbError } = await supabase
       .from('wiki_posts')
       .insert({
-        title: wikiData.title,
-        summary: summary,
+        title: generatedTitle,
+        summary: detailedSummary,
         image_url: imageUrl,
         source_url: wikiData.content_urls.desktop.page,
         wikipedia_page_id: wikiData.pageid.toString(),

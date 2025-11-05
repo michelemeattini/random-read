@@ -12,6 +12,7 @@ interface Post {
   summary: string;
   image_url: string;
   source_url: string;
+  category?: string;
   created_at: string;
 }
 
@@ -272,6 +273,7 @@ const Index = () => {
             summary={post.summary}
             imageUrl={post.image_url}
             sourceUrl={post.source_url}
+            category={post.category}
             onViewed={() => handlePostViewed(post.id)}
           />
         ))}
