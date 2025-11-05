@@ -45,11 +45,11 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Sei un divulgatore culturale esperto. Crea riassunti coinvolgenti e accattivanti di articoli Wikipedia in italiano. Il riassunto deve essere interessante, educativo e far venire voglia di saperne di più. Usa un tono moderno ma professionale. Massimo 200 parole.'
+            content: 'Sei un divulgatore culturale esperto. Crea riassunti ULTRA-BREVI per schermi mobile. MASSIMO 50-60 parole (2-3 frasi). Devono essere coinvolgenti, impattanti e far venire voglia di saperne di più. Tono moderno e diretto.'
           },
           {
             role: 'user',
-            content: `Crea un riassunto coinvolgente per questo articolo Wikipedia:\n\nTitolo: ${wikiData.title}\n\nContenuto: ${wikiData.extract}\n\nUrl: ${wikiData.content_urls.desktop.page}`
+            content: `Crea un riassunto di MASSIMO 50-60 parole per questo articolo Wikipedia:\n\nTitolo: ${wikiData.title}\n\nContenuto: ${wikiData.extract}`
           }
         ],
       }),
@@ -76,19 +76,42 @@ serve(async (req) => {
     }
 
     const aiData = await aiResponse.json();
-    const summary = aiData.choices[0].message.content;
+    let summary = aiData.choices[0].message.content;
 
-    console.log('AI summary generated');
-
-    // Get image - prefer Wikipedia thumbnail, fallback to Unsplash
-    let imageUrl = wikiData.thumbnail?.source || 
-                   wikiData.originalimage?.source || 
-                   `https://source.unsplash.com/1080x1920/?${encodeURIComponent(wikiData.title)}`;
-
-    // If image is too small, use Unsplash
-    if (wikiData.thumbnail?.width && wikiData.thumbnail.width < 800) {
-      imageUrl = `https://source.unsplash.com/1080x1920/?${encodeURIComponent(wikiData.title)}`;
+    // Validate and truncate summary if too long (max 300 characters for mobile)
+    if (summary.length > 300) {
+      summary = summary.substring(0, 297) + '...';
     }
+
+    console.log('AI summary generated:', summary.length, 'characters');
+
+    // Get high-quality image from Wikipedia pageimages API
+    let imageUrl = wikiData.originalimage?.source || wikiData.thumbnail?.source;
+    
+    // If Wikipedia image exists but is too small, try to get a larger version
+    if (!imageUrl || (wikiData.thumbnail?.width && wikiData.thumbnail.width < 600)) {
+      // Try to fetch better image using pageimages API
+      try {
+        const pageImagesResponse = await fetch(
+          `https://en.wikipedia.org/w/api.php?action=query&pageids=${wikiData.pageid}&prop=pageimages&format=json&pithumbsize=1920`
+        );
+        const pageImagesData = await pageImagesResponse.json();
+        const pageData = pageImagesData.query?.pages?.[wikiData.pageid];
+        
+        if (pageData?.thumbnail?.source) {
+          imageUrl = pageData.thumbnail.source;
+        }
+      } catch (e) {
+        console.error('Failed to fetch pageimages:', e);
+      }
+    }
+
+    // Fallback: use a solid dark gradient if no image found
+    if (!imageUrl) {
+      imageUrl = 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=1920&h=1080&fit=crop'; // Default space/abstract image
+    }
+    
+    console.log('Image URL:', imageUrl);
 
     // Save to database
     const { data: post, error: dbError } = await supabase

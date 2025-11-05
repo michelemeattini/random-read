@@ -31,17 +31,17 @@ const WikiPost = ({ title, summary, imageUrl, sourceUrl, onViewed }: WikiPostPro
         }}
       />
       
-      {/* Gradient Overlay for Readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/80" />
+      {/* Gradient Overlay for Readability - Lighter to show background better */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/70" />
       
       {/* Content */}
-      <div className="relative h-full flex flex-col justify-end p-6 pb-20 animate-fade-in">
-        <div className="space-y-4">
-          <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight">
+      <div className="relative h-full flex flex-col justify-end p-6 pb-24 animate-fade-in">
+        <div className="space-y-3">
+          <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight drop-shadow-lg">
             {title}
           </h1>
           
-          <p className="text-lg md:text-xl text-white/95 leading-relaxed max-w-3xl">
+          <p className="text-base md:text-lg text-white/95 leading-relaxed max-w-3xl line-clamp-6 drop-shadow-md">
             {summary}
           </p>
           

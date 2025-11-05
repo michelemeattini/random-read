@@ -179,7 +179,7 @@ const Index = () => {
       ref={containerRef}
       className="h-screen w-screen overflow-y-scroll snap-y snap-mandatory"
       onScroll={handleScroll}
-      style={{ scrollBehavior: 'smooth' }}
+      style={{ overscrollBehaviorY: 'contain' }}
     >
       {posts.map((post) => (
         <WikiPost
