@@ -246,8 +246,9 @@ const Index = () => {
       </div>
 
       {/* Bottom Navigation Bar - Mobile only */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-black">
-        <div className="flex items-center justify-end p-4">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-black w-full">
+        <div className="container flex items-center justify-between px-4 py-3">
+          <div /> {/* Elemento vuoto per mantenere lo spazio a sinistra */}
           <Button
             variant="ghost"
             size="icon"
