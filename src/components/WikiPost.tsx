@@ -82,8 +82,7 @@ const WikiPost = ({ id, title, summary, imageUrl, sourceUrl, category, onViewed 
           
           {/* Sources */}
           <div className="space-y-1 pt-2">
-            <p className="text-xs font-semibold tracking-widest text-white/70 uppercase">FONTI</p>
-            <a
+            <p className="text-xs font-semibold tracking-widest text-white/70 uppercase">FONTE:</p> <a
               href={sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
