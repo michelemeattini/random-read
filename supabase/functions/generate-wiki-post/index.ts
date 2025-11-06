@@ -68,14 +68,14 @@ serve(async (req) => {
     console.log(`Found ${candidates.length} candidate articles, evaluating interest...`);
     
     // Use GPT-5 nano to score articles by interest
-    const scoringResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const scoringResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-5-nano',
+        model: 'gpt-5-nano-2025-08-07',
         messages: [
           {
             role: 'system',
@@ -120,14 +120,14 @@ serve(async (req) => {
       : '';
 
     // Generate short title (micro summary)
-    const titleResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const titleResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-5-nano',
+        model: 'gpt-5-nano-2025-08-07',
         messages: [
           {
             role: 'system',
@@ -135,7 +135,7 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: `${categoryPrompt}Crea un titolo breve e accattivante (MASSIMO 15-20 parole) che catturi l'essenza di questo articolo Wikipedia. Usa SOLO testo semplice senza formattazione.\n\nTitolo: ${wikiData.title}\n\nContenuto: ${wikiData.extract}`
+            content: `${categoryPrompt}Crea un titolo breve e accattivante di ESATTAMENTE 8 parole che catturi l'essenza di questo articolo Wikipedia. Usa SOLO testo semplice senza formattazione. IMPORTANTE: il titolo DEVE essere esattamente 8 parole, non di più, non di meno.\n\nTitolo: ${wikiData.title}\n\nContenuto: ${wikiData.extract}`
           }
         ],
       }),
@@ -150,14 +150,14 @@ serve(async (req) => {
     console.log('AI title generated:', generatedTitle.length, 'characters');
 
     // Generate detailed summary
-    const summaryResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    const summaryResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-5-nano',
+        model: 'gpt-5-nano-2025-08-07',
         messages: [
           {
             role: 'system',
@@ -165,7 +165,7 @@ serve(async (req) => {
           },
           {
             role: 'user',
-            content: `${categoryPrompt}Crea una spiegazione dettagliata e coinvolgente (60-90 parole circa) per questo articolo Wikipedia. Usa SOLO testo semplice senza formattazione.\n\nTitolo: ${wikiData.title}\n\nContenuto: ${wikiData.extract}`
+            content: `${categoryPrompt}Crea una spiegazione dettagliata e coinvolgente di ESATTAMENTE 50 parole per questo articolo Wikipedia. Usa SOLO testo semplice senza formattazione. IMPORTANTE: il testo DEVE essere esattamente 50 parole, non di più, non di meno.\n\nTitolo: ${wikiData.title}\n\nContenuto: ${wikiData.extract}`
           }
         ],
       }),

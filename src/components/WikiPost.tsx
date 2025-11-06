@@ -55,12 +55,12 @@ const WikiPost = ({ id, title, summary, imageUrl, sourceUrl, category, onViewed 
       <div className="relative h-full flex flex-col justify-center items-center px-6 pb-32 md:pb-24 animate-fade-in-up">
         <div className="max-w-3xl w-full space-y-6 text-center">
           {/* Title (Micro Riassunto) */}
-          <h1 className="text-[2.5rem] leading-[1.1] md:text-5xl font-bold text-white" style={{ textShadow: '0 4px 12px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.6)' }}>
+          <h1 className="text-[2.5rem] leading-[1.1] md:text-5xl font-[700] text-white" style={{ textShadow: '0 4px 12px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.6)' }}>
             {title}
           </h1>
           
           {/* Detailed Explanation */}
-          <p className="text-base md:text-lg font-light text-white/95 leading-relaxed" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.8), 0 1px 3px rgba(0,0,0,0.6)' }}>
+          <p className="text-base md:text-lg font-[300] text-white/95 leading-relaxed" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.8), 0 1px 3px rgba(0,0,0,0.6)' }}>
             {summary}
           </p>
           
