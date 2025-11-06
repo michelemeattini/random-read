@@ -246,8 +246,8 @@ const Index = () => {
       </div>
 
       {/* Bottom Navigation Bar - Mobile only */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-sm">
-        <div className="flex items-center justify-center p-4">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-black">
+        <div className="flex items-center justify-end p-4">
           <Button
             variant="ghost"
             size="icon"
