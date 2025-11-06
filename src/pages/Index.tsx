@@ -177,7 +177,15 @@ const Index = () => {
   }, [loadExistingPosts, generateNewPost, viewedPostIds, posts]);
 
   useEffect(() => {
-    loadMorePosts();
+    // Load initial batch faster by loading more posts upfront
+    const loadInitial = async () => {
+      await loadMorePosts();
+      // Preload next batch
+      if (posts.length < 3) {
+        await loadMorePosts();
+      }
+    };
+    loadInitial();
   }, []);
 
   const handleScroll = useCallback(() => {

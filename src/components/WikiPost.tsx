@@ -51,9 +51,9 @@ const WikiPost = ({ id, title, summary, imageUrl, sourceUrl, category, onViewed 
       {/* Post Actions (Like, Save, Share) */}
       <PostActions postId={id} />
       
-      {/* Content - Centered Vertically and Horizontally */}
-      <div className="relative h-full flex flex-col justify-center items-center px-6 pb-32 md:pb-24 animate-fade-in-up">
-        <div className="max-w-3xl w-full space-y-6 text-center">
+      {/* Content - Bottom Left Aligned */}
+      <div className="relative h-full flex flex-col justify-end items-start px-6 md:px-12 pb-32 md:pb-24 animate-fade-in-up">
+        <div className="max-w-3xl w-full space-y-4 text-left">
           {/* Title (Micro Riassunto) */}
           <h1 className="text-[2.5rem] leading-[1.1] md:text-5xl font-[700] text-white" style={{ textShadow: '0 4px 12px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.6)' }}>
             {title}
@@ -66,7 +66,7 @@ const WikiPost = ({ id, title, summary, imageUrl, sourceUrl, category, onViewed 
           
           {/* Category Badge */}
           {category && (
-            <div className="flex justify-center pt-2">
+            <div className="flex justify-start pt-1">
               <Badge 
                 variant="secondary" 
                 className="bg-white/10 text-white border border-white/20 backdrop-blur-md text-xs font-semibold tracking-wider uppercase px-4 py-1.5"
@@ -77,7 +77,7 @@ const WikiPost = ({ id, title, summary, imageUrl, sourceUrl, category, onViewed 
           )}
           
           {/* Sources */}
-          <div className="space-y-2 pt-4">
+          <div className="space-y-1 pt-2">
             <p className="text-xs font-semibold tracking-widest text-white/70 uppercase">FONTI</p>
             <a
               href={sourceUrl}
