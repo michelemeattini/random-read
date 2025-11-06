@@ -69,6 +69,9 @@ html, body, #root {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  max-width: 90%;
+  width: 100%;
+  margin-right: auto;
 }
 
 /* Typography */
@@ -78,6 +81,7 @@ html, body, #root {
   margin-bottom: 1rem;
   text-shadow: 0 2px 4px rgba(0,0,0,0.5);
   line-height: 1.2;
+  max-width: 80%;
 }
 
 .post-summary {
@@ -86,6 +90,7 @@ html, body, #root {
   text-shadow: 0 1px 2px rgba(0,0,0,0.5);
   line-height: 1.5;
   margin-bottom: 2rem;
+  max-width: 75%;
 }
 
 /* Action buttons */
