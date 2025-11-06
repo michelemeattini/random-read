@@ -82,6 +82,7 @@ html, body, #root {
   text-shadow: 0 2px 4px rgba(0,0,0,0.5);
   line-height: 1.2;
   max-width: 80%;
+  text-align: left;
 }
 
 .post-summary {
@@ -91,6 +92,7 @@ html, body, #root {
   line-height: 1.5;
   margin-bottom: 2rem;
   max-width: 75%;
+  text-align: left;
 }
 
 /* Action buttons */
