@@ -20,15 +20,94 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    console.log('Fetching random Wikipedia article...', category ? `Category: ${category}` : '');
+    console.log('Fetching candidate Wikipedia articles...', category ? `Category: ${category}` : '');
     
-    // Get random Wikipedia article
+    // Get recently used Wikipedia page IDs (last 100 posts)
+    const { data: recentPosts } = await supabase
+      .from('wiki_posts')
+      .select('wikipedia_page_id')
+      .order('created_at', { ascending: false })
+      .limit(100);
+    
+    const recentPageIds = new Set(recentPosts?.map(p => p.wikipedia_page_id) || []);
+    console.log('Recently used articles:', recentPageIds.size);
+
+    // Fetch 5 random Wikipedia articles as candidates
+    const candidates = [];
+    let attempts = 0;
+    const maxAttempts = 15;
+    
+    while (candidates.length < 5 && attempts < maxAttempts) {
+      attempts++;
+      const wikiResponse = await fetch(
+        'https://en.wikipedia.org/api/rest_v1/page/random/summary'
+      );
+      
+      if (!wikiResponse.ok) continue;
+      
+      const wikiData = await wikiResponse.json();
+      
+      // Skip if recently used or too short
+      if (recentPageIds.has(wikiData.pageid.toString()) || 
+          !wikiData.extract || 
+          wikiData.extract.length < 100) {
+        continue;
+      }
+      
+      candidates.push({
+        title: wikiData.title,
+        extract: wikiData.extract.substring(0, 300),
+        pageid: wikiData.pageid
+      });
+    }
+    
+    if (candidates.length === 0) {
+      throw new Error('Could not find suitable Wikipedia articles');
+    }
+    
+    console.log(`Found ${candidates.length} candidate articles, evaluating interest...`);
+    
+    // Use GPT-5 nano to score articles by interest
+    const scoringResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${lovableApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'openai/gpt-5-nano',
+        messages: [
+          {
+            role: 'system',
+            content: 'Sei un esperto di contenuti virali e curiosità. Valuta articoli per interesse, originalità e potenziale di coinvolgimento.'
+          },
+          {
+            role: 'user',
+            content: `Valuta questi articoli da 1 a 10 per interesse (quanto sono curiosi, sorprendenti, educativi). Rispondi SOLO con numeri separati da virgola, nient\'altro.\n\n${candidates.map((c, i) => `${i + 1}. ${c.title}: ${c.extract}`).join('\n\n')}`
+          }
+        ],
+      }),
+    });
+    
+    if (!scoringResponse.ok) {
+      console.error('Scoring failed, using first candidate');
+      var selectedIndex = 0;
+    } else {
+      const scoringData = await scoringResponse.json();
+      const scores = scoringData.choices[0].message.content.trim().split(',').map((s: string) => parseFloat(s.trim()));
+      selectedIndex = scores.indexOf(Math.max(...scores));
+      console.log('Article scores:', scores, 'Selected index:', selectedIndex);
+    }
+    
+    const selectedCandidate = candidates[selectedIndex];
+    
+    // Fetch full article data
     const wikiResponse = await fetch(
-      'https://en.wikipedia.org/api/rest_v1/page/random/summary'
+      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(selectedCandidate.title)}`
     );
     
     if (!wikiResponse.ok) {
-      throw new Error('Failed to fetch Wikipedia article');
+      throw new Error('Failed to fetch selected Wikipedia article');
     }
 
     const wikiData = await wikiResponse.json();
@@ -48,7 +127,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'openai/gpt-5-nano',
         messages: [
           {
             role: 'system',
@@ -78,7 +157,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'openai/gpt-5-nano',
         messages: [
           {
             role: 'system',
