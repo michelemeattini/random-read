@@ -20,7 +20,7 @@ const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [viewedPostIds, setViewedPostIds] = useState<Set<string>>(() => {
     // Load viewed posts from localStorage
@@ -32,6 +32,7 @@ const Index = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const lastFetchRef = useRef<number>(0);
   const isLoadingMoreRef = useRef(false);
+  const initialLoadRef = useRef(false);
 
   useEffect(() => {
     // Check auth status and load preferences
@@ -153,15 +154,16 @@ const Index = () => {
     const existingPosts = await loadExistingPosts(allLoadedIds);
     const postsToAdd: Post[] = [];
 
-    // Logic: for every 4 existing posts, 1 should be generated
-    const existingCount = Math.min(4, existingPosts.length);
+    // Load more posts at once for smoother experience
+    const batchSize = 5;
+    const existingCount = Math.min(batchSize, existingPosts.length);
     
     if (existingCount > 0) {
       postsToAdd.push(...existingPosts.slice(0, existingCount));
     }
 
-    // Generate new post if we've shown 4 existing or no existing posts available
-    if (existingCount === 4 || existingPosts.length === 0) {
+    // Generate new post occasionally
+    if (existingPosts.length < batchSize || Math.random() < 0.2) {
       const newPost = await generateNewPost();
       if (newPost && !allLoadedIds.has(newPost.id)) {
         postsToAdd.push(newPost);
@@ -172,21 +174,28 @@ const Index = () => {
       setPosts(prev => [...prev, ...postsToAdd]);
     }
 
-    setIsLoading(false);
     isLoadingMoreRef.current = false;
   }, [loadExistingPosts, generateNewPost, viewedPostIds, posts]);
 
   useEffect(() => {
-    // Load initial batch faster by loading more posts upfront
-    const loadInitial = async () => {
-      await loadMorePosts();
-      // Preload next batch
-      if (posts.length < 3) {
-        await loadMorePosts();
+    if (!initialLoadRef.current) {
+      initialLoadRef.current = true;
+      // Load initial batch immediately
+      loadMorePosts();
+    }
+  }, [loadMorePosts]);
+
+  // Background pre-loading
+  useEffect(() => {
+    const preloadInterval = setInterval(() => {
+      // Always keep at least 3 posts ahead
+      if (posts.length - currentIndex <= 3 && !isLoadingMoreRef.current) {
+        loadMorePosts();
       }
-    };
-    loadInitial();
-  }, []);
+    }, 2000);
+
+    return () => clearInterval(preloadInterval);
+  }, [posts.length, currentIndex, loadMorePosts]);
 
   const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
@@ -197,15 +206,13 @@ const Index = () => {
     
     if (newIndex !== currentIndex) {
       setCurrentIndex(newIndex);
-      
-      // Load more posts when approaching the end (2 posts before the last)
-      if (newIndex >= posts.length - 2 && !isLoadingMoreRef.current) {
-        loadMorePosts();
-      }
     }
-  }, [currentIndex, posts.length, loadMorePosts]);
+  }, [currentIndex]);
 
   const handlePostViewed = useCallback(async (postId: string) => {
+    // Avoid duplicate view tracking
+    if (viewedPostIds.has(postId)) return;
+    
     // Mark as viewed in state and localStorage
     setViewedPostIds(prev => {
       const newSet = new Set([...prev, postId]);
@@ -213,22 +220,24 @@ const Index = () => {
       return newSet;
     });
     
-    // Increment view count in database
-    const { data } = await supabase
+    // Increment view count in database (fire and forget, no await)
+    supabase
       .from('wiki_posts')
       .select('view_count')
       .eq('id', postId)
-      .single();
-    
-    if (data) {
-      await supabase
-        .from('wiki_posts')
-        .update({ view_count: (data.view_count || 0) + 1 })
-        .eq('id', postId);
-    }
-  }, []);
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          supabase
+            .from('wiki_posts')
+            .update({ view_count: (data.view_count || 0) + 1 })
+            .eq('id', postId);
+        }
+      });
+  }, [viewedPostIds]);
 
-  if (isLoading && posts.length === 0) {
+  // Show loader only if no posts after 500ms
+  if (posts.length === 0) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-accent" />

@@ -15,13 +15,17 @@ interface WikiPostProps {
 
 const WikiPost = ({ id, title, summary, imageUrl, sourceUrl, category, onViewed }: WikiPostProps) => {
   const [animationType] = useState(Math.random() > 0.5 ? "animate-pan" : "animate-zoom");
+  const [hasViewed, setHasViewed] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      onViewed();
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [onViewed]);
+    if (!hasViewed) {
+      const timer = setTimeout(() => {
+        onViewed();
+        setHasViewed(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [hasViewed, onViewed]);
 
   const extractDomain = (url: string) => {
     try {
