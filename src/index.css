@@ -37,6 +37,21 @@ All colors MUST be HSL.
     --ring: 180 70% 50%;
 
     --radius: 0.75rem;
+
+    /* Category Colors */
+    --category-science: 220 90% 56%;
+    --category-technology: 262 83% 58%;
+    --category-history: 24 95% 53%;
+    --category-nature: 142 76% 36%;
+    --category-space: 217 91% 60%;
+    --category-art: 316 73% 52%;
+    --category-culture: 45 93% 47%;
+    --category-default: 180 70% 50%;
+
+    /* Gradients */
+    --gradient-brand: linear-gradient(135deg, hsl(180, 70%, 50%) 0%, hsl(220, 90%, 56%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(180, 70%, 50%) 0%, hsl(262, 83%, 58%) 100%);
+    --gradient-glow: radial-gradient(circle at center, hsl(180, 70%, 50% / 0.3), transparent 70%);
   }
 
   .dark {
@@ -67,6 +82,21 @@ All colors MUST be HSL.
     --border: 0 0% 15%;
     --input: 0 0% 15%;
     --ring: 180 70% 50%;
+
+    /* Category Colors (same for dark mode) */
+    --category-science: 220 90% 56%;
+    --category-technology: 262 83% 58%;
+    --category-history: 24 95% 53%;
+    --category-nature: 142 76% 36%;
+    --category-space: 217 91% 60%;
+    --category-art: 316 73% 52%;
+    --category-culture: 45 93% 47%;
+    --category-default: 180 70% 50%;
+
+    /* Gradients */
+    --gradient-brand: linear-gradient(135deg, hsl(180, 70%, 50%) 0%, hsl(220, 90%, 56%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(180, 70%, 50%) 0%, hsl(262, 83%, 58%) 100%);
+    --gradient-glow: radial-gradient(circle at center, hsl(180, 70%, 50% / 0.3), transparent 70%);
   }
 }
 

@@ -73,7 +73,16 @@ const WikiPost = ({ id, title, summary, imageUrl, sourceUrl, category, onViewed 
             <div className="flex justify-start pt-1">
               <Badge 
                 variant="secondary" 
-                className="bg-white/10 text-white border border-white/20 backdrop-blur-md text-xs font-semibold tracking-wider uppercase px-4 py-1.5"
+                className={`backdrop-blur-md text-xs font-semibold tracking-wider uppercase px-4 py-1.5 border-2 transition-all duration-300 hover:scale-105 ${
+                  category.toLowerCase().includes('scien') ? 'bg-category-science/20 text-category-science border-category-science/50 hover:shadow-[0_0_20px_hsl(var(--category-science)/0.5)]' :
+                  category.toLowerCase().includes('tech') ? 'bg-category-technology/20 text-category-technology border-category-technology/50 hover:shadow-[0_0_20px_hsl(var(--category-technology)/0.5)]' :
+                  category.toLowerCase().includes('stor') || category.toLowerCase().includes('hist') ? 'bg-category-history/20 text-category-history border-category-history/50 hover:shadow-[0_0_20px_hsl(var(--category-history)/0.5)]' :
+                  category.toLowerCase().includes('natur') ? 'bg-category-nature/20 text-category-nature border-category-nature/50 hover:shadow-[0_0_20px_hsl(var(--category-nature)/0.5)]' :
+                  category.toLowerCase().includes('spaz') || category.toLowerCase().includes('space') ? 'bg-category-space/20 text-category-space border-category-space/50 hover:shadow-[0_0_20px_hsl(var(--category-space)/0.5)]' :
+                  category.toLowerCase().includes('art') ? 'bg-category-art/20 text-category-art border-category-art/50 hover:shadow-[0_0_20px_hsl(var(--category-art)/0.5)]' :
+                  category.toLowerCase().includes('cultur') ? 'bg-category-culture/20 text-category-culture border-category-culture/50 hover:shadow-[0_0_20px_hsl(var(--category-culture)/0.5)]' :
+                  'bg-category-default/20 text-category-default border-category-default/50 hover:shadow-[0_0_20px_hsl(var(--category-default)/0.5)]'
+                }`}
               >
                 {category}
               </Badge>

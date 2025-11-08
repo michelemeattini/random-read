@@ -179,15 +179,24 @@ const PostActions = ({ postId }: PostActionsProps) => {
   };
 
   return (
-    <div className="absolute right-3 bottom-32 md:bottom-24 flex flex-col gap-6 z-10">
+    <div className="absolute right-3 bottom-32 md:bottom-24 flex flex-col gap-6 z-10 animate-slide-in-left">
       <button
         onClick={handleLike}
-        className="flex flex-col items-center gap-1 text-white hover:scale-110 transition-transform active:scale-95"
+        className="group flex flex-col items-center gap-1 text-white transition-all duration-300 hover:scale-125 active:scale-95 active:animate-spring-bounce"
       >
-        <Heart
-          className={`w-9 h-9 drop-shadow-lg ${isLiked ? "fill-red-500 text-red-500" : ""}`}
-          strokeWidth={2}
-        />
+        <div className={`relative ${isLiked ? "animate-spring-bounce" : ""}`}>
+          <Heart
+            className={`w-9 h-9 drop-shadow-lg transition-all duration-300 ${
+              isLiked 
+                ? "fill-red-500 text-red-500 drop-shadow-[0_0_12px_rgba(239,68,68,0.8)]" 
+                : "group-hover:fill-red-500/30"
+            }`}
+            strokeWidth={2}
+          />
+          {isLiked && (
+            <div className="absolute inset-0 animate-glow-pulse rounded-full blur-xl bg-red-500/40" />
+          )}
+        </div>
         <span className="text-xs font-semibold drop-shadow-lg">
           {formatCount(likeCount)}
         </span>
@@ -195,12 +204,21 @@ const PostActions = ({ postId }: PostActionsProps) => {
 
       <button
         onClick={handleSave}
-        className="flex flex-col items-center gap-1 text-white hover:scale-110 transition-transform active:scale-95"
+        className="group flex flex-col items-center gap-1 text-white transition-all duration-300 hover:scale-125 active:scale-95 active:animate-spring-bounce"
       >
-        <Bookmark
-          className={`w-9 h-9 drop-shadow-lg ${isSaved ? "fill-white text-white" : ""}`}
-          strokeWidth={2}
-        />
+        <div className={`relative ${isSaved ? "animate-spring-bounce" : ""}`}>
+          <Bookmark
+            className={`w-9 h-9 drop-shadow-lg transition-all duration-300 ${
+              isSaved 
+                ? "fill-accent text-accent drop-shadow-[0_0_12px_hsl(var(--accent)/0.8)]" 
+                : "group-hover:fill-white/30"
+            }`}
+            strokeWidth={2}
+          />
+          {isSaved && (
+            <div className="absolute inset-0 animate-glow-pulse rounded-full blur-xl bg-accent/40" />
+          )}
+        </div>
         <span className="text-xs font-semibold drop-shadow-lg">
           {formatCount(saveCount)}
         </span>
@@ -208,9 +226,12 @@ const PostActions = ({ postId }: PostActionsProps) => {
 
       <button
         onClick={handleShare}
-        className="flex flex-col items-center gap-1 text-white hover:scale-110 transition-transform active:scale-95"
+        className="group flex flex-col items-center gap-1 text-white transition-all duration-300 hover:scale-125 active:scale-95 active:animate-spring-bounce"
       >
-        <Share2 className="w-9 h-9 drop-shadow-lg" strokeWidth={2} />
+        <Share2 
+          className="w-9 h-9 drop-shadow-lg transition-all duration-300 group-hover:rotate-12 group-hover:drop-shadow-[0_0_12px_rgba(255,255,255,0.5)]" 
+          strokeWidth={2} 
+        />
       </button>
     </div>
   );

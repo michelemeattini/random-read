@@ -119,20 +119,31 @@ const Library = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-card border-b border-border">
+      <div className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b border-border/50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <Button
               variant="ghost"
               size="icon"
+              className="hover:scale-110 transition-all duration-300 hover:bg-accent/10"
               onClick={() => navigate("/")}
             >
               <ArrowLeft className="h-6 w-6" />
             </Button>
-            <h1 className="text-xl font-bold">Libreria</h1>
+            <h1 
+              className="text-xl font-bold bg-gradient-to-r from-accent via-category-science to-category-technology bg-clip-text text-transparent"
+              style={{ 
+                backgroundImage: 'var(--gradient-brand)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text'
+              }}
+            >
+              WikiScroll • Libreria
+            </h1>
             <Button
               variant="ghost"
               size="icon"
+              className="hover:scale-110 transition-all duration-300 hover:bg-accent/10"
               onClick={() => isAuthenticated ? navigate("/profile") : navigate("/auth")}
             >
               <User className="h-6 w-6" />

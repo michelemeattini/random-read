@@ -187,14 +187,23 @@ const Index = () => {
   return (
     <>
       {/* Top Navigation Bar - Desktop only */}
-      <div className="hidden md:block fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-sm">
-        <div className="flex items-center justify-between p-4">
-          <h1 className="text-white text-xl font-bold">WikiScroll</h1>
+      <div className="hidden md:block fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-xl border-b border-white/10">
+        <div className="flex items-center justify-between p-4 px-6">
+          <h1 
+            className="text-2xl font-bold bg-gradient-to-r from-accent via-category-science to-category-technology bg-clip-text text-transparent animate-glow-pulse"
+            style={{ 
+              backgroundImage: 'var(--gradient-brand)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text'
+            }}
+          >
+            WikiScroll
+          </h1>
           <div className="flex gap-2">
             <Button
               variant="ghost"
               size="icon"
-              className="text-white hover:bg-white/20"
+              className="text-white hover:bg-white/20 hover:scale-110 transition-all duration-300 hover:shadow-lg hover:shadow-accent/30"
               onClick={() => navigate("/library")}
             >
               <Library className="h-6 w-6" />
@@ -202,7 +211,7 @@ const Index = () => {
             <Button
               variant="ghost"
               size="icon"
-              className="text-white hover:bg-white/20"
+              className="text-white hover:bg-white/20 hover:scale-110 transition-all duration-300 hover:shadow-lg hover:shadow-accent/30"
               onClick={() => isAuthenticated ? navigate("/profile") : navigate("/auth")}
             >
               <User className="h-6 w-6" />
@@ -212,12 +221,22 @@ const Index = () => {
       </div>
 
       {/* Bottom Navigation Bar - Mobile only */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-black w-full">
-        <div className="container flex items-center justify-between px-4 py-3">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-xl border-t border-white/10">
+        <div className="container flex items-center justify-around px-4 py-3">
+          <h1 
+            className="text-lg font-bold bg-gradient-to-r from-accent via-category-science to-category-technology bg-clip-text text-transparent"
+            style={{ 
+              backgroundImage: 'var(--gradient-brand)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text'
+            }}
+          >
+            WikiScroll
+          </h1>
           <Button
             variant="ghost"
             size="icon"
-            className="text-white hover:bg-white/20"
+            className="text-white hover:bg-white/20 hover:scale-110 transition-all duration-300 active:scale-95"
             onClick={() => navigate("/library")}
           >
             <Library className="h-6 w-6" />
@@ -225,7 +244,7 @@ const Index = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="text-white hover:bg-white/20"
+            className="text-white hover:bg-white/20 hover:scale-110 transition-all duration-300 active:scale-95"
             onClick={() => isAuthenticated ? navigate("/profile") : navigate("/auth")}
           >
             <User className="h-6 w-6" />

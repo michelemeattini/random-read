@@ -60,6 +60,16 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        category: {
+          science: "hsl(var(--category-science))",
+          technology: "hsl(var(--category-technology))",
+          history: "hsl(var(--category-history))",
+          nature: "hsl(var(--category-nature))",
+          space: "hsl(var(--category-space))",
+          art: "hsl(var(--category-art))",
+          culture: "hsl(var(--category-culture))",
+          default: "hsl(var(--category-default))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -104,6 +114,20 @@ export default {
           "50%": { transform: "scale(1.05)" },
           "100%": { transform: "scale(1)" },
         },
+        "spring-bounce": {
+          "0%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.2)" },
+          "75%": { transform: "scale(0.95)" },
+          "100%": { transform: "scale(1)" },
+        },
+        "glow-pulse": {
+          "0%, 100%": { boxShadow: "0 0 20px hsl(var(--accent) / 0.3)" },
+          "50%": { boxShadow: "0 0 40px hsl(var(--accent) / 0.6)" },
+        },
+        "slide-in-left": {
+          "0%": { transform: "translateX(-100%)", opacity: "0" },
+          "100%": { transform: "translateX(0)", opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -113,6 +137,9 @@ export default {
         "fade-in": "fade-in 0.5s ease-out",
         "fade-in-up": "fade-in-up 0.6s ease-out",
         "zoom-bg": "zoom-bg 30s ease-in-out infinite",
+        "spring-bounce": "spring-bounce 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+        "glow-pulse": "glow-pulse 2s ease-in-out infinite",
+        "slide-in-left": "slide-in-left 0.4s ease-out",
       },
     },
   },
