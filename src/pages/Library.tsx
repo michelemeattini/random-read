@@ -23,12 +23,12 @@ const Library = () => {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [groupedPosts, setGroupedPosts] = useState<GroupedPosts>({});
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const observerTarget = useRef<HTMLDivElement>(null);
   const pageRef = useRef(0);
-  const POSTS_PER_PAGE = 20;
+  const POSTS_PER_PAGE = 30;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -37,7 +37,8 @@ const Library = () => {
   }, []);
 
   const loadPosts = useCallback(async () => {
-    if (!hasMore || isLoading) return;
+    if (!hasMore) return;
+    if (isLoading) return;
     
     setIsLoading(true);
     const from = pageRef.current * POSTS_PER_PAGE;
@@ -64,7 +65,7 @@ const Library = () => {
     }
     
     setIsLoading(false);
-  }, [hasMore, isLoading]);
+  }, [hasMore, isLoading, POSTS_PER_PAGE]);
 
   useEffect(() => {
     loadPosts();
