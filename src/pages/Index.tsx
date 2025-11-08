@@ -5,6 +5,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Loader2, User, Library } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { usePostTracking } from "@/hooks/usePostTracking";
 
 interface Post {
   id: string;
@@ -28,17 +29,23 @@ const Index = () => {
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userId, setUserId] = useState<string | undefined>(undefined);
   const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastFetchRef = useRef<number>(0);
   const isLoadingMoreRef = useRef(false);
   const initialLoadRef = useRef(false);
 
+  // Track current post being viewed
+  const currentPost = posts[currentIndex];
+  usePostTracking(currentPost?.id, userId);
+
   useEffect(() => {
     // Check auth status and load preferences
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsAuthenticated(!!session);
       if (session) {
+        setUserId(session.user.id);
         loadUserPreferences(session.user.id);
       }
     });
@@ -46,8 +53,10 @@ const Index = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setIsAuthenticated(!!session);
       if (session) {
+        setUserId(session.user.id);
         loadUserPreferences(session.user.id);
       } else {
+        setUserId(undefined);
         setPreferredCategories([]);
       }
     });

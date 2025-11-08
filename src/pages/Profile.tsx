@@ -6,7 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
-import { User, LogOut, Heart, Bookmark, Loader2 } from "lucide-react";
+import { User, LogOut, Heart, Bookmark, Loader2, BarChart3 } from "lucide-react";
+import { StatsOverview } from "@/components/stats/StatsOverview";
+import { CategoryChart } from "@/components/stats/CategoryChart";
+import { AchievementGrid } from "@/components/stats/AchievementGrid";
 
 const AVAILABLE_CATEGORIES = [
   "Scienza e Tecnologia",
@@ -45,6 +48,17 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
   const [isSavingCategories, setIsSavingCategories] = useState(false);
+  const [stats, setStats] = useState({
+    totalViews: 0,
+    todayViews: 0,
+    weekViews: 0,
+    monthViews: 0,
+    yearViews: 0,
+    currentStreak: 0,
+    avgReadingTime: 0,
+    categoryStats: [] as { category: string; count: number }[],
+    achievements: [] as any[],
+  });
 
   useEffect(() => {
     checkUser();
@@ -98,7 +112,102 @@ const Profile = () => {
       setSavedPosts(saves.map((save: any) => save.wiki_posts).filter(Boolean));
     }
 
+    // Load statistics
+    await loadStatistics(session.user.id);
+
     setIsLoading(false);
+  };
+
+  const loadStatistics = async (userId: string) => {
+    // Get all views
+    const { data: views } = await supabase
+      .from("post_views")
+      .select("*, wiki_posts(category)")
+      .eq("user_id", userId)
+      .order("viewed_at", { ascending: false });
+
+    if (!views) return;
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const yearStart = new Date(now.getFullYear(), 0, 1);
+
+    const todayViews = views.filter(v => new Date(v.viewed_at) >= todayStart).length;
+    const weekViews = views.filter(v => new Date(v.viewed_at) >= weekStart).length;
+    const monthViews = views.filter(v => new Date(v.viewed_at) >= monthStart).length;
+    const yearViews = views.filter(v => new Date(v.viewed_at) >= yearStart).length;
+
+    // Calculate streak
+    let currentStreak = 0;
+    let checkDate = new Date();
+    checkDate.setHours(0, 0, 0, 0);
+
+    const viewDates = new Set(
+      views.map(v => {
+        const date = new Date(v.viewed_at);
+        date.setHours(0, 0, 0, 0);
+        return date.getTime();
+      })
+    );
+
+    while (viewDates.has(checkDate.getTime())) {
+      currentStreak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    // Calculate average reading time
+    const totalReadingTime = views.reduce((acc, v) => acc + (v.reading_time || 0), 0);
+    const avgReadingTime = views.length > 0 ? Math.round(totalReadingTime / views.length) : 0;
+
+    // Calculate category stats
+    const categoryCount: Record<string, number> = {};
+    views.forEach((v: any) => {
+      const category = v.wiki_posts?.category || "Altro";
+      categoryCount[category] = (categoryCount[category] || 0) + 1;
+    });
+
+    const categoryStats = Object.entries(categoryCount)
+      .map(([category, count]) => ({ category, count }))
+      .sort((a, b) => b.count - a.count);
+
+    // Get achievements
+    const { data: allAchievements } = await supabase
+      .from("achievements")
+      .select("*")
+      .order("threshold", { ascending: true });
+
+    const { data: unlockedAchievements } = await supabase
+      .from("user_achievements")
+      .select("achievement_id")
+      .eq("user_id", userId);
+
+    const unlockedIds = unlockedAchievements?.map(a => a.achievement_id) || [];
+    const uniqueCategories = Object.keys(categoryCount).length;
+
+    const achievements = allAchievements?.map(achievement => ({
+      ...achievement,
+      unlocked: unlockedIds.includes(achievement.id),
+      progress:
+        achievement.category === "reading"
+          ? views.length
+          : achievement.category === "streak"
+          ? currentStreak
+          : uniqueCategories,
+    })) || [];
+
+    setStats({
+      totalViews: views.length,
+      todayViews,
+      weekViews,
+      monthViews,
+      yearViews,
+      currentStreak,
+      avgReadingTime,
+      categoryStats,
+      achievements,
+    });
   };
 
   const handleLogout = async () => {
@@ -193,12 +302,16 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Tabs for Liked, Saved Posts, and Categories */}
-      <Tabs defaultValue="liked" className="w-full">
-        <TabsList className="w-full grid grid-cols-3 sticky top-[73px] z-40 bg-background rounded-none border-b">
+      {/* Tabs for Liked, Saved Posts, Statistics, and Categories */}
+      <Tabs defaultValue="stats" className="w-full">
+        <TabsList className="w-full grid grid-cols-4 sticky top-[73px] z-40 bg-background rounded-none border-b">
+          <TabsTrigger value="stats" className="gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Stats
+          </TabsTrigger>
           <TabsTrigger value="liked" className="gap-2">
             <Heart className="w-4 h-4" />
-            Mi piace
+            Like
           </TabsTrigger>
           <TabsTrigger value="saved" className="gap-2">
             <Bookmark className="w-4 h-4" />
@@ -208,6 +321,24 @@ const Profile = () => {
             Categorie
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="stats" className="mt-0 p-4 space-y-6">
+          <StatsOverview
+            totalViews={stats.totalViews}
+            todayViews={stats.todayViews}
+            weekViews={stats.weekViews}
+            monthViews={stats.monthViews}
+            yearViews={stats.yearViews}
+            currentStreak={stats.currentStreak}
+            avgReadingTime={stats.avgReadingTime}
+          />
+          
+          {stats.categoryStats.length > 0 && (
+            <CategoryChart data={stats.categoryStats} />
+          )}
+          
+          <AchievementGrid achievements={stats.achievements} />
+        </TabsContent>
 
         <TabsContent value="liked" className="mt-0">
           {likedPosts.length === 0 ? (
