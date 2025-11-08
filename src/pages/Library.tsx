@@ -2,9 +2,16 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, User, Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, User, Search, X, SlidersHorizontal } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Post {
   id: string;
@@ -14,11 +21,27 @@ interface Post {
   source_url: string;
   category?: string;
   created_at: string;
+  view_count?: number;
 }
 
 interface GroupedPosts {
   [category: string]: Post[];
 }
+
+const AVAILABLE_CATEGORIES = [
+  "Scienza e Tecnologia",
+  "Storia",
+  "Arte e Cultura",
+  "Natura",
+  "Geografia",
+  "Sport",
+  "Medicina",
+  "Astronomia",
+  "Musica",
+  "Letteratura"
+];
+
+type SortOption = 'recent' | 'popular' | 'alphabetical';
 
 const Library = () => {
   const navigate = useNavigate();
@@ -28,6 +51,10 @@ const Library = () => {
   const [hasMore, setHasMore] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [showViewed, setShowViewed] = useState<boolean | null>(null); // null = all, true = viewed, false = not viewed
+  const [sortBy, setSortBy] = useState<SortOption>('recent');
+  const [viewedPostIds, setViewedPostIds] = useState<Set<string>>(new Set());
   const observerTarget = useRef<HTMLDivElement>(null);
   const pageRef = useRef(0);
   const POSTS_PER_PAGE = 30;
@@ -36,6 +63,12 @@ const Library = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsAuthenticated(!!session);
     });
+    
+    // Load viewed posts from localStorage
+    const stored = localStorage.getItem('viewedPostIds');
+    if (stored) {
+      setViewedPostIds(new Set(JSON.parse(stored)));
+    }
   }, []);
 
   const loadPosts = useCallback(async () => {
@@ -75,15 +108,43 @@ const Library = () => {
 
   useEffect(() => {
     // Filter posts based on search query
-    const filteredPosts = searchQuery
+    let filteredPosts = searchQuery
       ? posts.filter(post => 
           post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           post.summary.toLowerCase().includes(searchQuery.toLowerCase())
         )
       : posts;
 
+    // Filter by selected categories
+    if (selectedCategories.length > 0) {
+      filteredPosts = filteredPosts.filter(post => 
+        selectedCategories.includes(post.category || 'Generale')
+      );
+    }
+
+    // Filter by viewed status
+    if (showViewed !== null) {
+      filteredPosts = filteredPosts.filter(post => 
+        showViewed ? viewedPostIds.has(post.id) : !viewedPostIds.has(post.id)
+      );
+    }
+
+    // Sort posts
+    const sortedPosts = [...filteredPosts].sort((a, b) => {
+      switch (sortBy) {
+        case 'recent':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case 'popular':
+          return (b.view_count || 0) - (a.view_count || 0);
+        case 'alphabetical':
+          return a.title.localeCompare(b.title);
+        default:
+          return 0;
+      }
+    });
+
     // Group filtered posts by category
-    const grouped = filteredPosts.reduce((acc, post) => {
+    const grouped = sortedPosts.reduce((acc, post) => {
       const category = post.category || 'Generale';
       if (!acc[category]) {
         acc[category] = [];
@@ -93,7 +154,7 @@ const Library = () => {
     }, {} as GroupedPosts);
     
     setGroupedPosts(grouped);
-  }, [posts, searchQuery]);
+  }, [posts, searchQuery, selectedCategories, showViewed, sortBy, viewedPostIds]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -114,6 +175,38 @@ const Library = () => {
 
   const handlePostClick = (sourceUrl: string) => {
     window.open(sourceUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const toggleCategory = (category: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  const toggleViewedFilter = () => {
+    setShowViewed(prev => {
+      if (prev === null) return true; // Show only viewed
+      if (prev === true) return false; // Show only not viewed
+      return null; // Show all
+    });
+  };
+
+  const clearFilters = () => {
+    setSelectedCategories([]);
+    setShowViewed(null);
+    setSearchQuery("");
+  };
+
+  const getCategoryColor = (category: string) => {
+    const lowerCategory = category.toLowerCase();
+    if (lowerCategory.includes('scien') || lowerCategory.includes('tecn')) return 'bg-category-science/20 text-category-science border-category-science/50 hover:bg-category-science/30';
+    if (lowerCategory.includes('stor') || lowerCategory.includes('hist')) return 'bg-category-history/20 text-category-history border-category-history/50 hover:bg-category-history/30';
+    if (lowerCategory.includes('natur')) return 'bg-category-nature/20 text-category-nature border-category-nature/50 hover:bg-category-nature/30';
+    if (lowerCategory.includes('spaz') || lowerCategory.includes('astron')) return 'bg-category-space/20 text-category-space border-category-space/50 hover:bg-category-space/30';
+    if (lowerCategory.includes('art') || lowerCategory.includes('cultur') || lowerCategory.includes('music') || lowerCategory.includes('letter')) return 'bg-category-art/20 text-category-art border-category-art/50 hover:bg-category-art/30';
+    return 'bg-category-default/20 text-category-default border-category-default/50 hover:bg-category-default/30';
   };
 
   return (
@@ -138,7 +231,7 @@ const Library = () => {
                 backgroundClip: 'text'
               }}
             >
-              WikiScroll • Libreria
+              Libreria
             </h1>
             <Button
               variant="ghost"
@@ -151,7 +244,7 @@ const Library = () => {
           </div>
           
           {/* Search Bar */}
-          <div className="relative">
+          <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="text"
@@ -160,6 +253,80 @@ const Library = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
+          </div>
+
+          {/* Filters Bar */}
+          <div className="space-y-3">
+            {/* Sort and Viewed Filter */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="gap-2 hover:scale-105 transition-all duration-300"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                    {sortBy === 'recent' ? 'Più recenti' : sortBy === 'popular' ? 'Più popolari' : 'Alfabetico'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="bg-card/95 backdrop-blur-xl border-border/50">
+                  <DropdownMenuItem onClick={() => setSortBy('recent')}>
+                    Più recenti
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy('popular')}>
+                    Più popolari
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSortBy('alphabetical')}>
+                    Alfabetico
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Badge
+                variant="outline"
+                className={`cursor-pointer transition-all duration-300 hover:scale-105 ${
+                  showViewed === true 
+                    ? 'bg-accent/20 text-accent border-accent/50' 
+                    : showViewed === false 
+                    ? 'bg-muted/20 text-muted-foreground border-muted-foreground/50'
+                    : 'hover:bg-accent/10'
+                }`}
+                onClick={toggleViewedFilter}
+              >
+                {showViewed === true ? 'Solo visti' : showViewed === false ? 'Non visti' : 'Tutti'}
+              </Badge>
+
+              {(selectedCategories.length > 0 || showViewed !== null || searchQuery) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearFilters}
+                  className="gap-1 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-3 w-3" />
+                  Cancella filtri
+                </Button>
+              )}
+            </div>
+
+            {/* Category Filters */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {AVAILABLE_CATEGORIES.map((category) => (
+                <Badge
+                  key={category}
+                  variant="outline"
+                  className={`cursor-pointer transition-all duration-300 hover:scale-105 ${
+                    selectedCategories.includes(category)
+                      ? getCategoryColor(category)
+                      : 'hover:bg-accent/10'
+                  }`}
+                  onClick={() => toggleCategory(category)}
+                >
+                  {category}
+                </Badge>
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -190,7 +190,7 @@ const Index = () => {
       <div className="hidden md:block fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-xl border-b border-white/10">
         <div className="flex items-center justify-between p-4 px-6">
           <h1 
-            className="text-2xl font-bold bg-gradient-to-r from-accent via-category-science to-category-technology bg-clip-text text-transparent animate-glow-pulse"
+            className="text-2xl font-bold bg-gradient-to-r from-accent via-category-science to-category-technology bg-clip-text text-transparent"
             style={{ 
               backgroundImage: 'var(--gradient-brand)',
               WebkitBackgroundClip: 'text',
