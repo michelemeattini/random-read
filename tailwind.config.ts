@@ -128,6 +128,14 @@ export default {
           "0%": { transform: "translateX(-100%)", opacity: "0" },
           "100%": { transform: "translateX(0)", opacity: "1" },
         },
+        "shimmer": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(100%)" },
+        },
+        "blur-up": {
+          "0%": { filter: "blur(20px)", opacity: "0" },
+          "100%": { filter: "blur(0px)", opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -140,6 +148,8 @@ export default {
         "spring-bounce": "spring-bounce 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
         "slide-in-left": "slide-in-left 0.4s ease-out",
+        "shimmer": "shimmer 2s ease-in-out infinite",
+        "blur-up": "blur-up 0.8s ease-out forwards",
       },
     },
   },

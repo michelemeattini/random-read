@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, User, Search, X, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, User, Search, X, SlidersHorizontal, Eye, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -22,6 +22,7 @@ interface Post {
   category?: string;
   created_at: string;
   view_count?: number;
+  like_count?: number;
 }
 
 interface GroupedPosts {
@@ -55,6 +56,7 @@ const Library = () => {
   const [showViewed, setShowViewed] = useState<boolean | null>(null); // null = all, true = viewed, false = not viewed
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [viewedPostIds, setViewedPostIds] = useState<Set<string>>(new Set());
+  const [likedPostIds, setLikedPostIds] = useState<Set<string>>(new Set());
   const observerTarget = useRef<HTMLDivElement>(null);
   const pageRef = useRef(0);
   const POSTS_PER_PAGE = 30;
@@ -62,6 +64,9 @@ const Library = () => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsAuthenticated(!!session);
+      if (session) {
+        loadUserLikes(session.user.id);
+      }
     });
     
     // Load viewed posts from localStorage
@@ -71,6 +76,17 @@ const Library = () => {
     }
   }, []);
 
+  const loadUserLikes = async (userId: string) => {
+    const { data } = await supabase
+      .from('post_likes')
+      .select('post_id')
+      .eq('user_id', userId);
+    
+    if (data) {
+      setLikedPostIds(new Set(data.map(like => like.post_id)));
+    }
+  };
+
   const loadPosts = useCallback(async () => {
     if (!hasMore) return;
     if (isLoading) return;
@@ -79,23 +95,43 @@ const Library = () => {
     const from = pageRef.current * POSTS_PER_PAGE;
     const to = from + POSTS_PER_PAGE - 1;
 
-    const { data, error } = await supabase
+    // Get posts with like counts
+    const { data: postsData, error: postsError } = await supabase
       .from('wiki_posts')
       .select('*')
       .order('created_at', { ascending: false })
       .range(from, to);
 
-    if (error) {
-      console.error('Error loading posts:', error);
+    if (postsError) {
+      console.error('Error loading posts:', postsError);
       setIsLoading(false);
       return;
     }
 
-    if (data) {
-      if (data.length < POSTS_PER_PAGE) {
+    if (postsData) {
+      // Get like counts for these posts
+      const postIds = postsData.map(p => p.id);
+      const { data: likeCounts } = await supabase
+        .from('post_likes')
+        .select('post_id')
+        .in('post_id', postIds);
+
+      // Count likes per post
+      const likeCountMap = (likeCounts || []).reduce((acc, like) => {
+        acc[like.post_id] = (acc[like.post_id] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Merge like counts with posts
+      const postsWithLikes = postsData.map(post => ({
+        ...post,
+        like_count: likeCountMap[post.id] || 0
+      }));
+
+      if (postsData.length < POSTS_PER_PAGE) {
         setHasMore(false);
       }
-      setPosts(prev => [...prev, ...data]);
+      setPosts(prev => [...prev, ...postsWithLikes]);
       pageRef.current += 1;
     }
     
@@ -340,24 +376,61 @@ const Library = () => {
         ) : (
           Object.entries(groupedPosts).map(([category, categoryPosts]) => (
             <div key={category} className="mb-8">
-              <h2 className="text-2xl font-bold mb-4 capitalize">{category}</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <h2 className="text-2xl font-bold mb-6 capitalize bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">{category}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {categoryPosts.map((post) => (
                   <div
                     key={post.id}
                     onClick={() => handlePostClick(post.source_url)}
-                    className="group cursor-pointer bg-card rounded-lg overflow-hidden border border-border hover:shadow-lg transition-all duration-300"
+                    className="group cursor-pointer bg-card rounded-xl overflow-hidden border border-border/50 shadow-lg hover:shadow-2xl hover:shadow-accent/20 transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02] transform-gpu perspective-1000"
+                    style={{
+                      transformStyle: 'preserve-3d'
+                    }}
                   >
-                    <div className="aspect-video relative overflow-hidden">
+                    <div className="aspect-video relative overflow-hidden bg-muted">
                       <img
                         src={post.image_url}
                         alt={post.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700 animate-blur-up"
+                        loading="lazy"
                       />
+                      {/* Category Badge on Image */}
+                      {post.category && (
+                        <div className="absolute top-3 left-3">
+                          <Badge 
+                            className={`text-xs font-semibold backdrop-blur-md border-2 ${getCategoryColor(post.category)}`}
+                          >
+                            {post.category}
+                          </Badge>
+                        </div>
+                      )}
+                      {/* Viewed Badge */}
+                      {viewedPostIds.has(post.id) && (
+                        <div className="absolute top-3 right-3">
+                          <Badge className="bg-accent/20 text-accent border-accent/50 backdrop-blur-md text-xs">
+                            <Eye className="h-3 w-3 mr-1" />
+                            Visto
+                          </Badge>
+                        </div>
+                      )}
+                      {/* Gradient Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     </div>
-                    <div className="p-4">
-                      <h3 className="font-[700] text-base mb-2 line-clamp-2">{post.title}</h3>
-                      <p className="font-[300] text-sm text-muted-foreground line-clamp-3">{post.summary}</p>
+                    <div className="p-5 space-y-3">
+                      <h3 className="font-[700] text-base mb-2 line-clamp-2 group-hover:text-accent transition-colors duration-300">{post.title}</h3>
+                      <p className="font-[300] text-sm text-muted-foreground line-clamp-3 leading-relaxed">{post.summary}</p>
+                      
+                      {/* Stats Bar */}
+                      <div className="flex items-center gap-4 pt-2 text-xs text-muted-foreground border-t border-border/50">
+                        <div className="flex items-center gap-1 hover:text-accent transition-colors">
+                          <Eye className="h-4 w-4" />
+                          <span className="font-semibold">{post.view_count || 0}</span>
+                        </div>
+                        <div className={`flex items-center gap-1 transition-colors ${likedPostIds.has(post.id) ? 'text-red-500' : 'hover:text-red-500'}`}>
+                          <Heart className={`h-4 w-4 ${likedPostIds.has(post.id) ? 'fill-red-500' : ''}`} />
+                          <span className="font-semibold">{post.like_count || 0}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -366,20 +439,47 @@ const Library = () => {
           ))
         )}
 
-        {/* Loading skeletons */}
+        {/* Loading skeletons with shimmer effect */}
         {isLoading && (
-          <div className="mb-8">
-            <Skeleton className="h-8 w-48 mb-4" />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="mb-8 animate-fade-in">
+            <Skeleton className="h-8 w-48 mb-6 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+            </Skeleton>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
-                <div key={i} className="bg-card rounded-lg overflow-hidden border border-border">
-                  <Skeleton className="aspect-video w-full" />
-                  <div className="p-4 space-y-2">
-                    <Skeleton className="h-5 w-full" />
-                    <Skeleton className="h-5 w-3/4" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-2/3" />
+                <div key={i} className="bg-card rounded-xl overflow-hidden border border-border/50 shadow-lg">
+                  <div className="aspect-video w-full relative overflow-hidden bg-muted">
+                    <Skeleton className="w-full h-full" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
+                  </div>
+                  <div className="p-5 space-y-3">
+                    <div className="space-y-2">
+                      <Skeleton className="h-5 w-full relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
+                      </Skeleton>
+                      <Skeleton className="h-5 w-3/4 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
+                      </Skeleton>
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
+                      </Skeleton>
+                      <Skeleton className="h-4 w-full relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
+                      </Skeleton>
+                      <Skeleton className="h-4 w-2/3 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
+                      </Skeleton>
+                    </div>
+                    <div className="flex items-center gap-4 pt-2">
+                      <Skeleton className="h-4 w-12 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
+                      </Skeleton>
+                      <Skeleton className="h-4 w-12 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
+                      </Skeleton>
+                    </div>
                   </div>
                 </div>
               ))}
