@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import WikiPost from "@/components/WikiPost";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, User } from "lucide-react";
+import { Loader2, User, Library } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
@@ -68,18 +68,22 @@ const Index = () => {
   };
 
   const loadExistingPosts = useCallback(async (excludeIds: Set<string>) => {
+    // 80% chance to load unviewed posts, 20% to load any posts
+    const shouldLoadUnviewed = Math.random() < 0.8;
+    
     let query = supabase
       .from('wiki_posts')
       .select('*')
-      .not('id', 'in', `(${Array.from(excludeIds).join(',') || 'null'})`)
       .order('created_at', { ascending: false });
 
-    // If user has preferred categories, apply 80/20 logic
-    if (preferredCategories.length > 0) {
-      const shouldUsePreferred = Math.random() < 0.8; // 80% chance
-      if (shouldUsePreferred) {
-        query = query.in('category', preferredCategories);
-      }
+    if (shouldLoadUnviewed && excludeIds.size > 0) {
+      // Load only unviewed posts
+      query = query.not('id', 'in', `(${Array.from(excludeIds).join(',')})`);
+    }
+
+    // If user has preferred categories, apply filter
+    if (preferredCategories.length > 0 && Math.random() < 0.8) {
+      query = query.in('category', preferredCategories);
     }
 
     const { data, error } = await query.limit(20);
@@ -89,93 +93,28 @@ const Index = () => {
       return [];
     }
 
-    // Filter out already viewed posts
-    return (data || []).filter(post => !excludeIds.has(post.id));
+    return data || [];
   }, [preferredCategories]);
-
-  const generateNewPost = useCallback(async () => {
-    const now = Date.now();
-    if (now - lastFetchRef.current < 2000) {
-      return null;
-    }
-    
-    lastFetchRef.current = now;
-    
-    try {
-      // Select category based on preferences (80/20 logic)
-      let selectedCategory = null;
-      if (preferredCategories.length > 0 && Math.random() < 0.8) {
-        selectedCategory = preferredCategories[Math.floor(Math.random() * preferredCategories.length)];
-      }
-
-      const { data, error } = await supabase.functions.invoke('generate-wiki-post', {
-        body: { category: selectedCategory }
-      });
-      
-      if (error) throw error;
-      
-      if (data?.post) {
-        return data.post;
-      }
-      
-      return null;
-    } catch (error: any) {
-      console.error('Error generating post:', error);
-      
-      if (error?.message?.includes('429')) {
-        toast({
-          title: "Rallenta un attimo!",
-          description: "Troppi contenuti generati. Riprova tra poco.",
-          variant: "destructive",
-        });
-      } else if (error?.message?.includes('402')) {
-        toast({
-          title: "Crediti esauriti",
-          description: "I crediti Lovable AI sono finiti. Contatta l'admin.",
-          variant: "destructive",
-        });
-      }
-      
-      return null;
-    }
-  }, [toast, preferredCategories]);
 
   const loadMorePosts = useCallback(async () => {
     if (isLoadingMoreRef.current) return;
     
     isLoadingMoreRef.current = true;
     
-    // Get all post IDs we've already loaded (viewed or in current list)
-    const allLoadedIds = new Set([
-      ...viewedPostIds,
-      ...posts.map(p => p.id)
-    ]);
+    // Get all post IDs we've already loaded
+    const allLoadedIds = new Set(posts.map(p => p.id));
     
     const existingPosts = await loadExistingPosts(allLoadedIds);
-    const postsToAdd: Post[] = [];
-
+    
     // Load more posts at once for smoother experience
     const batchSize = 5;
-    const existingCount = Math.min(batchSize, existingPosts.length);
     
-    if (existingCount > 0) {
-      postsToAdd.push(...existingPosts.slice(0, existingCount));
-    }
-
-    // Generate new post occasionally
-    if (existingPosts.length < batchSize || Math.random() < 0.2) {
-      const newPost = await generateNewPost();
-      if (newPost && !allLoadedIds.has(newPost.id)) {
-        postsToAdd.push(newPost);
-      }
-    }
-
-    if (postsToAdd.length > 0) {
-      setPosts(prev => [...prev, ...postsToAdd]);
+    if (existingPosts.length > 0) {
+      setPosts(prev => [...prev, ...existingPosts.slice(0, batchSize)]);
     }
 
     isLoadingMoreRef.current = false;
-  }, [loadExistingPosts, generateNewPost, viewedPostIds, posts]);
+  }, [loadExistingPosts, posts]);
 
   useEffect(() => {
     if (!initialLoadRef.current) {
@@ -251,21 +190,38 @@ const Index = () => {
       <div className="hidden md:block fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-sm">
         <div className="flex items-center justify-between p-4">
           <h1 className="text-white text-xl font-bold">WikiScroll</h1>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/20"
-            onClick={() => isAuthenticated ? navigate("/profile") : navigate("/auth")}
-          >
-            <User className="h-6 w-6" />
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/20"
+              onClick={() => navigate("/library")}
+            >
+              <Library className="h-6 w-6" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/20"
+              onClick={() => isAuthenticated ? navigate("/profile") : navigate("/auth")}
+            >
+              <User className="h-6 w-6" />
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Bottom Navigation Bar - Mobile only */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-black w-full">
         <div className="container flex items-center justify-between px-4 py-3">
-          <div /> {/* Elemento vuoto per mantenere lo spazio a sinistra */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/20"
+            onClick={() => navigate("/library")}
+          >
+            <Library className="h-6 w-6" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
