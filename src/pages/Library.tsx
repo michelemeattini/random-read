@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, User, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -26,6 +27,7 @@ const Library = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const observerTarget = useRef<HTMLDivElement>(null);
   const pageRef = useRef(0);
   const POSTS_PER_PAGE = 30;
@@ -72,8 +74,16 @@ const Library = () => {
   }, []);
 
   useEffect(() => {
-    // Group posts by category
-    const grouped = posts.reduce((acc, post) => {
+    // Filter posts based on search query
+    const filteredPosts = searchQuery
+      ? posts.filter(post => 
+          post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          post.summary.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : posts;
+
+    // Group filtered posts by category
+    const grouped = filteredPosts.reduce((acc, post) => {
       const category = post.category || 'Generale';
       if (!acc[category]) {
         acc[category] = [];
@@ -83,7 +93,7 @@ const Library = () => {
     }, {} as GroupedPosts);
     
     setGroupedPosts(grouped);
-  }, [posts]);
+  }, [posts, searchQuery]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -110,29 +120,45 @@ const Library = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-50 bg-card border-b border-border">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/")}
-          >
-            <ArrowLeft className="h-6 w-6" />
-          </Button>
-          <h1 className="text-xl font-bold">Libreria</h1>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => isAuthenticated ? navigate("/profile") : navigate("/auth")}
-          >
-            <User className="h-6 w-6" />
-          </Button>
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/")}
+            >
+              <ArrowLeft className="h-6 w-6" />
+            </Button>
+            <h1 className="text-xl font-bold">Libreria</h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => isAuthenticated ? navigate("/profile") : navigate("/auth")}
+            >
+              <User className="h-6 w-6" />
+            </Button>
+          </div>
+          
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Cerca per titolo o parole chiave..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
       </div>
 
       {/* Content */}
       <div className="container mx-auto px-4 py-6">
         {Object.keys(groupedPosts).length === 0 && !isLoading ? (
-          <p className="text-center text-muted-foreground py-8">Nessun contenuto disponibile</p>
+          <p className="text-center text-muted-foreground py-8">
+            {searchQuery ? "Nessun risultato trovato" : "Nessun contenuto disponibile"}
+          </p>
         ) : (
           Object.entries(groupedPosts).map(([category, categoryPosts]) => (
             <div key={category} className="mb-8">
