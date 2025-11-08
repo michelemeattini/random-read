@@ -25,6 +25,7 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          glow: "hsl(var(--primary-glow))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -136,6 +137,10 @@ export default {
           "0%": { filter: "blur(20px)", opacity: "0" },
           "100%": { filter: "blur(0px)", opacity: "1" },
         },
+        "scale-in": {
+          "0%": { transform: "scale(0.9)", opacity: "0" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -150,6 +155,7 @@ export default {
         "slide-in-left": "slide-in-left 0.4s ease-out",
         "shimmer": "shimmer 2s ease-in-out infinite",
         "blur-up": "blur-up 0.8s ease-out forwards",
+        "scale-in": "scale-in 0.3s ease-out",
       },
     },
   },

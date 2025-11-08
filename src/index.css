@@ -19,6 +19,7 @@ All colors MUST be HSL.
 
     --primary: 0 0% 8%;
     --primary-foreground: 0 0% 98%;
+    --primary-glow: 180 60% 60%;
 
     --secondary: 0 0% 92%;
     --secondary-foreground: 0 0% 10%;
@@ -66,6 +67,7 @@ All colors MUST be HSL.
 
     --primary: 0 0% 98%;
     --primary-foreground: 0 0% 8%;
+    --primary-glow: 180 70% 60%;
 
     --secondary: 0 0% 15%;
     --secondary-foreground: 0 0% 98%;

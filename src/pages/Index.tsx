@@ -6,6 +6,7 @@ import { Loader2, User, Library } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { usePostTracking } from "@/hooks/usePostTracking";
+import { Onboarding } from "@/components/Onboarding";
 
 interface Post {
   id: string;
@@ -31,6 +32,7 @@ const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userId, setUserId] = useState<string | undefined>(undefined);
   const [preferredCategories, setPreferredCategories] = useState<string[]>([]);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastFetchRef = useRef<number>(0);
   const isLoadingMoreRef = useRef(false);
@@ -39,6 +41,15 @@ const Index = () => {
   // Track current post being viewed
   const currentPost = posts[currentIndex];
   usePostTracking(currentPost?.id, userId);
+
+  // Check if user has seen onboarding
+  useEffect(() => {
+    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
+    if (!hasSeenOnboarding) {
+      // Delay onboarding slightly to let the page load
+      setTimeout(() => setShowOnboarding(true), 500);
+    }
+  }, []);
 
   useEffect(() => {
     // Check auth status and load preferences
@@ -157,6 +168,15 @@ const Index = () => {
     }
   }, [currentIndex]);
 
+  const handleOnboardingComplete = () => {
+    localStorage.setItem('hasSeenOnboarding', 'true');
+    setShowOnboarding(false);
+    toast({
+      title: "🎉 Benvenuto!",
+      description: "Inizia a esplorare i contenuti scorrendo verso il basso.",
+    });
+  };
+
   const handlePostViewed = useCallback(async (postId: string) => {
     // Avoid duplicate view tracking
     if (viewedPostIds.has(postId)) return;
@@ -195,6 +215,11 @@ const Index = () => {
 
   return (
     <>
+      {/* Onboarding Dialog */}
+      {showOnboarding && (
+        <Onboarding onComplete={handleOnboardingComplete} />
+      )}
+
       {/* Top Navigation Bar - Desktop only */}
       <div className="hidden md:block fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-xl border-b border-white/10">
         <div className="flex items-center justify-between p-4 px-6">
