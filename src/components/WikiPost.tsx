@@ -53,7 +53,13 @@ const WikiPost = ({ id, title, summary, imageUrl, sourceUrl, category, onViewed 
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
       
       {/* Post Actions (Like, Save, Share) */}
-      <PostActions postId={id} />
+      <PostActions 
+        postId={id}
+        title={title}
+        summary={summary}
+        imageUrl={imageUrl}
+        category={category}
+      />
       
       {/* Content - Bottom Left Aligned */}
       <div className="relative h-full flex flex-col justify-end items-start px-6 md:px-12 pb-32 md:pb-24 animate-fade-in-up">

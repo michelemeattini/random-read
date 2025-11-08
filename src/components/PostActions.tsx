@@ -2,9 +2,14 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Heart, Bookmark, Share2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import ShareDialog from "./ShareDialog";
 
 interface PostActionsProps {
   postId: string;
+  title: string;
+  summary: string;
+  imageUrl: string;
+  category?: string;
 }
 
 const formatCount = (count: number): string => {
@@ -17,13 +22,14 @@ const formatCount = (count: number): string => {
   return count.toString();
 };
 
-const PostActions = ({ postId }: PostActionsProps) => {
+const PostActions = ({ postId, title, summary, imageUrl, category }: PostActionsProps) => {
   const { toast } = useToast();
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [likeCount, setLikeCount] = useState(0);
   const [saveCount, setSaveCount] = useState(0);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   useEffect(() => {
     checkAuthAndLoadState();
@@ -157,29 +163,25 @@ const PostActions = ({ postId }: PostActionsProps) => {
     }
   };
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "WikiScroll",
-          text: "Scopri questo post su WikiScroll!",
-          url: window.location.href,
-        });
-      } catch (error) {
-        // User cancelled share
-      }
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      toast({
-        title: "Link copiato!",
-        description: "Il link è stato copiato negli appunti",
-      });
-    }
+  const handleShare = () => {
+    setShareDialogOpen(true);
   };
 
   return (
-    <div className="absolute right-3 bottom-32 md:bottom-24 flex flex-col gap-6 z-10 animate-slide-in-left">
+    <>
+      <ShareDialog 
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        post={{
+          title,
+          summary,
+          imageUrl,
+          category,
+          url: window.location.href
+        }}
+      />
+      
+      <div className="absolute right-3 bottom-32 md:bottom-24 flex flex-col gap-6 z-10 animate-slide-in-left">
       <button
         onClick={handleLike}
         className="group flex flex-col items-center gap-1 text-white transition-all duration-300 hover:scale-125 active:scale-95 active:animate-spring-bounce"
@@ -233,7 +235,8 @@ const PostActions = ({ postId }: PostActionsProps) => {
           strokeWidth={2} 
         />
       </button>
-    </div>
+      </div>
+    </>
   );
 };
 
