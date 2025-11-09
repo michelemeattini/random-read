@@ -6,6 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, User, Search, X, SlidersHorizontal, Eye, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
+import AdCard from "@/components/AdCard";
+import { injectAds, isAd } from "@/utils/adInjection";
+import { ADS_CONFIG } from "@/config/ads";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -188,8 +191,14 @@ const Library = () => {
       acc[category].push(post);
       return acc;
     }, {} as GroupedPosts);
+
+    // Inject ads into each category
+    const groupedWithAds: GroupedPosts = {};
+    Object.entries(grouped).forEach(([category, categoryPosts]) => {
+      groupedWithAds[category] = injectAds(categoryPosts, ADS_CONFIG.LIBRARY_AD_FREQUENCY);
+    });
     
-    setGroupedPosts(grouped);
+    setGroupedPosts(groupedWithAds);
   }, [posts, searchQuery, selectedCategories, showViewed, sortBy, viewedPostIds]);
 
   useEffect(() => {
@@ -378,62 +387,66 @@ const Library = () => {
             <div key={category} className="mb-8">
               <h2 className="text-2xl font-bold mb-6 capitalize bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">{category}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {categoryPosts.map((post) => (
-                  <div
-                    key={post.id}
-                    onClick={() => handlePostClick(post.source_url)}
-                    className="group cursor-pointer bg-card rounded-xl overflow-hidden border border-border/50 shadow-lg hover:shadow-2xl hover:shadow-accent/20 transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02] transform-gpu perspective-1000"
-                    style={{
-                      transformStyle: 'preserve-3d'
-                    }}
-                  >
-                    <div className="aspect-video relative overflow-hidden bg-muted">
-                      <img
-                        src={post.image_url}
-                        alt={post.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700 animate-blur-up"
-                        loading="lazy"
-                      />
-                      {/* Category Badge on Image */}
-                      {post.category && (
-                        <div className="absolute top-3 left-3">
-                          <Badge 
-                            className={`text-xs font-semibold backdrop-blur-md border-2 ${getCategoryColor(post.category)}`}
-                          >
-                            {post.category}
-                          </Badge>
-                        </div>
-                      )}
-                      {/* Viewed Badge */}
-                      {viewedPostIds.has(post.id) && (
-                        <div className="absolute top-3 right-3">
-                          <Badge className="bg-accent/20 text-accent border-accent/50 backdrop-blur-md text-xs">
-                            <Eye className="h-3 w-3 mr-1" />
-                            Visto
-                          </Badge>
-                        </div>
-                      )}
-                      {/* Gradient Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    </div>
-                    <div className="p-5 space-y-3">
-                      <h3 className="font-[700] text-base mb-2 line-clamp-2 group-hover:text-accent transition-colors duration-300">{post.title}</h3>
-                      <p className="font-[300] text-sm text-muted-foreground line-clamp-3 leading-relaxed">{post.summary}</p>
-                      
-                      {/* Stats Bar */}
-                      <div className="flex items-center gap-4 pt-2 text-xs text-muted-foreground border-t border-border/50">
-                        <div className="flex items-center gap-1 hover:text-accent transition-colors">
-                          <Eye className="h-4 w-4" />
-                          <span className="font-semibold">{post.view_count || 0}</span>
-                        </div>
-                        <div className={`flex items-center gap-1 transition-colors ${likedPostIds.has(post.id) ? 'text-red-500' : 'hover:text-red-500'}`}>
-                          <Heart className={`h-4 w-4 ${likedPostIds.has(post.id) ? 'fill-red-500' : ''}`} />
-                          <span className="font-semibold">{post.like_count || 0}</span>
+                {categoryPosts.map((item, index) => 
+                  isAd(item) ? (
+                    <AdCard key={`ad-${item.id}-${index}`} ad={item} />
+                  ) : (
+                    <div
+                      key={item.id}
+                      onClick={() => handlePostClick(item.source_url)}
+                      className="group cursor-pointer bg-card rounded-xl overflow-hidden border border-border/50 shadow-lg hover:shadow-2xl hover:shadow-accent/20 transition-all duration-500 hover:-translate-y-2 hover:scale-[1.02] transform-gpu perspective-1000"
+                      style={{
+                        transformStyle: 'preserve-3d'
+                      }}
+                    >
+                      <div className="aspect-video relative overflow-hidden bg-muted">
+                        <img
+                          src={item.image_url}
+                          alt={item.title}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700 animate-blur-up"
+                          loading="lazy"
+                        />
+                        {/* Category Badge on Image */}
+                        {item.category && (
+                          <div className="absolute top-3 left-3">
+                            <Badge 
+                              className={`text-xs font-semibold backdrop-blur-md border-2 ${getCategoryColor(item.category)}`}
+                            >
+                              {item.category}
+                            </Badge>
+                          </div>
+                        )}
+                        {/* Viewed Badge */}
+                        {viewedPostIds.has(item.id) && (
+                          <div className="absolute top-3 right-3">
+                            <Badge className="bg-accent/20 text-accent border-accent/50 backdrop-blur-md text-xs">
+                              <Eye className="h-3 w-3 mr-1" />
+                              Visto
+                            </Badge>
+                          </div>
+                        )}
+                        {/* Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                      </div>
+                      <div className="p-5 space-y-3">
+                        <h3 className="font-[700] text-base mb-2 line-clamp-2 group-hover:text-accent transition-colors duration-300">{item.title}</h3>
+                        <p className="font-[300] text-sm text-muted-foreground line-clamp-3 leading-relaxed">{item.summary}</p>
+                        
+                        {/* Stats Bar */}
+                        <div className="flex items-center gap-4 pt-2 text-xs text-muted-foreground border-t border-border/50">
+                          <div className="flex items-center gap-1 hover:text-accent transition-colors">
+                            <Eye className="h-4 w-4" />
+                            <span className="font-semibold">{item.view_count || 0}</span>
+                          </div>
+                          <div className={`flex items-center gap-1 transition-colors ${likedPostIds.has(item.id) ? 'text-red-500' : 'hover:text-red-500'}`}>
+                            <Heart className={`h-4 w-4 ${likedPostIds.has(item.id) ? 'fill-red-500' : ''}`} />
+                            <span className="font-semibold">{item.like_count || 0}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                )}
               </div>
             </div>
           ))

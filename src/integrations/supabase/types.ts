@@ -41,6 +41,87 @@ export type Database = {
         }
         Relationships: []
       }
+      ad_impressions: {
+        Row: {
+          ad_id: string
+          clicked: boolean | null
+          created_at: string | null
+          id: string
+          skipped: boolean | null
+          user_id: string
+          view_duration: number
+          viewed_at: string
+        }
+        Insert: {
+          ad_id: string
+          clicked?: boolean | null
+          created_at?: string | null
+          id?: string
+          skipped?: boolean | null
+          user_id: string
+          view_duration: number
+          viewed_at: string
+        }
+        Update: {
+          ad_id?: string
+          clicked?: boolean | null
+          created_at?: string | null
+          id?: string
+          skipped?: boolean | null
+          user_id?: string
+          view_duration?: number
+          viewed_at?: string
+        }
+        Relationships: []
+      }
+      ads: {
+        Row: {
+          advertiser: string
+          created_at: string | null
+          cta_text: string
+          cta_url: string
+          description: string
+          google_ad_slot: string | null
+          id: string
+          image_url: string
+          is_active: boolean | null
+          is_google_ad: boolean | null
+          priority: number | null
+          skip_delay: number | null
+          title: string
+        }
+        Insert: {
+          advertiser: string
+          created_at?: string | null
+          cta_text: string
+          cta_url: string
+          description: string
+          google_ad_slot?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean | null
+          is_google_ad?: boolean | null
+          priority?: number | null
+          skip_delay?: number | null
+          title: string
+        }
+        Update: {
+          advertiser?: string
+          created_at?: string | null
+          cta_text?: string
+          cta_url?: string
+          description?: string
+          google_ad_slot?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean | null
+          is_google_ad?: boolean | null
+          priority?: number | null
+          skip_delay?: number | null
+          title?: string
+        }
+        Relationships: []
+      }
       post_likes: {
         Row: {
           created_at: string

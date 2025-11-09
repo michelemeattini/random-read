@@ -1,0 +1,48 @@
+import { AdData } from "@/types/ad";
+
+export const MOCK_ADS: AdData[] = [
+  {
+    id: 'ad-lovable-1',
+    type: 'ad',
+    title: 'Crea App in Minuti con AI',
+    description: 'Lovable trasforma le tue idee in app web funzionanti usando intelligenza artificiale. Inizia gratis oggi.',
+    imageUrl: 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800&h=1200&fit=crop',
+    ctaText: 'Inizia Gratis',
+    ctaUrl: 'https://lovable.dev',
+    advertiser: 'Lovable',
+    skipDelay: 5,
+  },
+  {
+    id: 'ad-notion-2',
+    type: 'ad',
+    title: 'Organizza il Tuo Lavoro',
+    description: 'Notion è lo spazio di lavoro all-in-one per note, documenti e progetti. Usato da milioni di persone.',
+    imageUrl: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&h=1200&fit=crop',
+    ctaText: 'Prova Gratis',
+    ctaUrl: 'https://notion.so',
+    advertiser: 'Notion',
+    skipDelay: 5,
+  },
+  {
+    id: 'ad-vercel-3',
+    type: 'ad',
+    title: 'Deploy Web Apps Istantaneo',
+    description: 'Vercel è la piattaforma per frontend developer. Deploy automatico, preview istantanee, performance ottimali.',
+    imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=1200&fit=crop',
+    ctaText: 'Inizia Ora',
+    ctaUrl: 'https://vercel.com',
+    advertiser: 'Vercel',
+    skipDelay: 5,
+  },
+  {
+    id: 'ad-supabase-4',
+    type: 'ad',
+    title: 'Backend Pronto in 2 Minuti',
+    description: 'Supabase è l\'alternativa open source a Firebase. Database, auth, storage e real-time in un unico servizio.',
+    imageUrl: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=800&h=1200&fit=crop',
+    ctaText: 'Scopri di Più',
+    ctaUrl: 'https://supabase.com',
+    advertiser: 'Supabase',
+    skipDelay: 5,
+  },
+];

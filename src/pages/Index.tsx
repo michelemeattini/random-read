@@ -1,12 +1,15 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import WikiPost from "@/components/WikiPost";
+import AdPost from "@/components/AdPost";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, User, Library } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { usePostTracking } from "@/hooks/usePostTracking";
 import { Onboarding } from "@/components/Onboarding";
+import { injectAds, isAd } from "@/utils/adInjection";
+import { PostOrAd } from "@/types/ad";
 
 interface Post {
   id: string;
@@ -22,6 +25,7 @@ const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [postsWithAds, setPostsWithAds] = useState<PostOrAd[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [viewedPostIds, setViewedPostIds] = useState<Set<string>>(() => {
@@ -38,9 +42,16 @@ const Index = () => {
   const isLoadingMoreRef = useRef(false);
   const initialLoadRef = useRef(false);
 
-  // Track current post being viewed
-  const currentPost = posts[currentIndex];
+  // Track current post being viewed (skip if it's an ad)
+  const currentItem = postsWithAds[currentIndex];
+  const currentPost = currentItem && !isAd(currentItem) ? currentItem : null;
   usePostTracking(currentPost?.id, userId);
+
+  // Inject ads when posts change
+  useEffect(() => {
+    const injected = injectAds(posts);
+    setPostsWithAds(injected);
+  }, [posts]);
 
   // Check if user has seen onboarding
   useEffect(() => {
@@ -147,14 +158,14 @@ const Index = () => {
   // Background pre-loading
   useEffect(() => {
     const preloadInterval = setInterval(() => {
-      // Always keep at least 3 posts ahead
-      if (posts.length - currentIndex <= 3 && !isLoadingMoreRef.current) {
+      // Always keep at least 3 posts ahead (accounting for ads)
+      if (postsWithAds.length - currentIndex <= 5 && !isLoadingMoreRef.current) {
         loadMorePosts();
       }
     }, 2000);
 
     return () => clearInterval(preloadInterval);
-  }, [posts.length, currentIndex, loadMorePosts]);
+  }, [postsWithAds.length, currentIndex, loadMorePosts]);
 
   const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
@@ -205,7 +216,7 @@ const Index = () => {
   }, [viewedPostIds]);
 
   // Show loader only if no posts after 500ms
-  if (posts.length === 0) {
+  if (postsWithAds.length === 0) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-accent" />
@@ -292,20 +303,24 @@ const Index = () => {
         onScroll={handleScroll}
         style={{ overscrollBehaviorY: 'contain' }}
       >
-        {posts.map((post) => (
-          <WikiPost
-            key={post.id}
-            id={post.id}
-            title={post.title}
-            summary={post.summary}
-            imageUrl={post.image_url}
-            sourceUrl={post.source_url}
-            category={post.category}
-            onViewed={() => handlePostViewed(post.id)}
-          />
-        ))}
+        {postsWithAds.map((item, index) => 
+          isAd(item) ? (
+            <AdPost key={`ad-${item.id}-${index}`} ad={item} />
+          ) : (
+            <WikiPost
+              key={item.id}
+              id={item.id}
+              title={item.title}
+              summary={item.summary}
+              imageUrl={item.image_url}
+              sourceUrl={item.source_url}
+              category={item.category}
+              onViewed={() => handlePostViewed(item.id)}
+            />
+          )
+        )}
         
-        {isLoading && posts.length > 0 && (
+        {isLoading && postsWithAds.length > 0 && (
           <div className="h-screen w-screen flex items-center justify-center snap-start">
             <Loader2 className="w-8 h-8 animate-spin text-accent" />
           </div>
