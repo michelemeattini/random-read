@@ -299,7 +299,7 @@ const Index = () => {
 
       <div 
         ref={containerRef}
-        className="h-screen w-screen overflow-y-scroll snap-y snap-mandatory"
+        className="h-screen w-screen overflow-y-scroll snap-y snap-mandatory hide-scrollbar"
         onScroll={handleScroll}
         style={{ overscrollBehaviorY: 'contain' }}
       >
